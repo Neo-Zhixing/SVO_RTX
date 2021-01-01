@@ -39,11 +39,6 @@ fn setup(
     // Watch for changes
 
     commands
-        .spawn(PbrBundle {
-            mesh: meshes.add(Mesh::from(shape::Cube { size: 1.0 })),
-            transform: Transform::from_translation(Vec3::new(0.0, 0.5, 0.0)),
-            ..Default::default()
-        })
         .spawn(OctreeRaytracerBundle::default())
         .spawn(Camera3dBundle {
             transform: Transform::from_translation(Vec3::new(-2.0, 2.5, 5.0))

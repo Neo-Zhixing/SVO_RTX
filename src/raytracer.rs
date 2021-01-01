@@ -5,12 +5,7 @@ use bevy::render::pass::{
     LoadOp, Operations, PassDescriptor, RenderPassColorAttachmentDescriptor,
     RenderPassDepthStencilAttachmentDescriptor, TextureAttachment,
 };
-use bevy::render::pipeline::{
-    BlendDescriptor, ColorStateDescriptor, ColorWrite, CompareFunction,
-    DepthStencilStateDescriptor, IndexFormat, InputStepMode, PipelineDescriptor,
-    PipelineSpecialization, PrimitiveTopology, RenderPipeline, StencilStateDescriptor,
-    StencilStateFaceDescriptor, VertexAttributeDescriptor, VertexBufferDescriptor, VertexFormat,
-};
+use bevy::render::pipeline::{BlendDescriptor, ColorStateDescriptor, ColorWrite, CompareFunction, DepthStencilStateDescriptor, IndexFormat, InputStepMode, PipelineDescriptor, PipelineSpecialization, PrimitiveTopology, RenderPipeline, StencilStateDescriptor, StencilStateFaceDescriptor, VertexAttributeDescriptor, VertexBufferDescriptor, VertexFormat, BlendFactor, BlendOperation};
 use bevy::render::render_graph::base as base_render_graph;
 use bevy::render::render_graph::{PassNode, RenderGraph, WindowSwapChainNode, WindowTextureNode};
 use bevy::render::renderer::{
@@ -40,7 +35,6 @@ pub struct RayPass;
 
 pub mod node {
     pub const RAY_PASS: &str = "ray_pass";
-    pub const RAY_DEPTH_TEXTURE: &str = "ray_pass_depth_texture";
 }
 
 impl Plugin for OctreeRayTracerPlugin {
@@ -53,14 +47,14 @@ impl Plugin for OctreeRayTracerPlugin {
                     attachment: TextureAttachment::Input("color_attachment".to_string()),
                     resolve_target: None,
                     ops: Operations {
-                        load: LoadOp::Clear(Color::rgb(0.1, 0.1, 0.7)),
+                        load: LoadOp::Load,
                         store: true,
                     },
                 }],
                 depth_stencil_attachment: Some(RenderPassDepthStencilAttachmentDescriptor {
                     attachment: TextureAttachment::Input("depth".to_string()),
                     depth_ops: Some(Operations {
-                        load: LoadOp::Clear(1.0),
+                        load: LoadOp::Load,
                         store: true,
                     }),
                     stencil_ops: None,
@@ -88,33 +82,19 @@ impl Plugin for OctreeRayTracerPlugin {
                     "color_attachment",
                 )
                 .unwrap();
-
-            render_graph.add_node(
-                node::RAY_DEPTH_TEXTURE,
-                WindowTextureNode::new(
-                    WindowId::primary(),
-                    TextureDescriptor {
-                        size: Extent3d {
-                            depth: 1,
-                            width: 1,
-                            height: 1,
-                        },
-                        mip_level_count: 1,
-                        sample_count: 1,
-                        dimension: TextureDimension::D2,
-                        format: TextureFormat::Depth32Float,
-                        usage: TextureUsage::OUTPUT_ATTACHMENT,
-                    },
-                ),
-            );
             render_graph
                 .add_slot_edge(
-                    node::RAY_DEPTH_TEXTURE,
+                    base_render_graph::node::MAIN_DEPTH_TEXTURE,
                     WindowTextureNode::OUT_TEXTURE,
                     node::RAY_PASS,
                     "depth",
                 )
                 .unwrap();
+
+
+            // ensure ray pass runs after main pass
+            // So that pixels covered by UI / Mesh rendered objects will not be traced
+            render_graph.add_node_edge(base_render_graph::node::MAIN_PASS, node::RAY_PASS).unwrap();
         }
 
         app.add_system_to_stage(
@@ -172,8 +152,16 @@ impl Plugin for OctreeRayTracerPlugin {
                 }),
                 color_states: vec![ColorStateDescriptor {
                     format: TextureFormat::default(),
-                    color_blend: BlendDescriptor::REPLACE,
-                    alpha_blend: BlendDescriptor::REPLACE,
+                    color_blend: BlendDescriptor {
+                        src_factor: BlendFactor::SrcAlpha,
+                        dst_factor: BlendFactor::OneMinusSrcAlpha,
+                        operation: BlendOperation::Add,
+                    },
+                    alpha_blend: BlendDescriptor {
+                        src_factor: BlendFactor::One,
+                        dst_factor: BlendFactor::One,
+                        operation: BlendOperation::Add,
+                    },
                     write_mask: ColorWrite::ALL,
                 }],
                 shader_stages: ShaderStages {
@@ -216,7 +204,7 @@ impl Default for OctreeRaytracerBundle {
                         dynamic_bindings: Default::default(),
                         vertex_buffer_descriptor: VertexBufferDescriptor {
                             name: "ray_blit_vertex_buffer".into(),
-                            stride: (std::mem::size_of::<f32>() * 3) as u64,
+                            stride: (std::mem::size_of::<f32>() * 2) as u64,
                             step_mode: InputStepMode::Vertex,
                             attributes: vec![VertexAttributeDescriptor {
                                 name: "position".into(),
