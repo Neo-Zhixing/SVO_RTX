@@ -17,6 +17,9 @@ use bevy::render::texture::{
     Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsage,
 };
 use bevy::window::WindowId;
+use crate::raytracer::projection_node::CameraProjectionNode;
+
+pub mod projection_node;
 
 pub const RAY_PIPELINE_HANDLE: HandleUntyped =
     HandleUntyped::weak_from_u64(PipelineDescriptor::TYPE_UUID, 0x786f7ab62875ebbc);
@@ -35,6 +38,7 @@ pub struct RayPass;
 
 pub mod node {
     pub const RAY_PASS: &str = "ray_pass";
+    pub const PROJECTION_NODE: &str = "ray_projection_node";
 }
 
 impl Plugin for OctreeRayTracerPlugin {
@@ -65,6 +69,8 @@ impl Plugin for OctreeRayTracerPlugin {
             ray_pass_node.use_default_clear_color(0);
             ray_pass_node.add_camera(base_render_graph::camera::CAMERA_3D);
             render_graph.add_node(node::RAY_PASS, ray_pass_node);
+            render_graph.add_system_node(node::PROJECTION_NODE, CameraProjectionNode::new(base_render_graph::camera::CAMERA_3D));
+            render_graph.add_node_edge(node::PROJECTION_NODE, node::RAY_PASS).unwrap();
             render_graph
                 .add_node_edge(base_render_graph::node::TEXTURE_COPY, node::RAY_PASS)
                 .unwrap();

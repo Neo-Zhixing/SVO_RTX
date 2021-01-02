@@ -8,4 +8,5 @@ edition = "2018"
 
 [dependencies]
 glam = "*"
-bevy = { path = "../bevy" }
+bevy = "0.4"
+bevy_fly_camera = "0.6"
