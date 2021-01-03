@@ -19,9 +19,11 @@ use bevy::render::texture::{
 use bevy::window::WindowId;
 use crate::raytracer::projection_node::CameraProjectionNode;
 use crate::raytracer::chunk::Chunk;
+use crate::raytracer::octree_node::OctreeNode;
 
 pub mod projection_node;
 pub mod chunk;
+pub mod octree_node;
 
 pub const RAY_PIPELINE_HANDLE: HandleUntyped =
     HandleUntyped::weak_from_u64(PipelineDescriptor::TYPE_UUID, 0x786f7ab62875ebbc);
@@ -41,6 +43,7 @@ pub struct RayPass;
 pub mod node {
     pub const RAY_PASS: &str = "ray_pass";
     pub const PROJECTION_NODE: &str = "ray_projection_node";
+    pub const OCTREE_CHUNK_NODE: &str = "octree_chunk_node";
 }
 
 impl Plugin for OctreeRayTracerPlugin {
@@ -98,6 +101,12 @@ impl Plugin for OctreeRayTracerPlugin {
                     "depth",
                 )
                 .unwrap();
+
+            // Octree chunks
+            render_graph
+                .add_system_node(node::OCTREE_CHUNK_NODE, OctreeNode::new());
+            render_graph
+                .add_node_edge(node::OCTREE_CHUNK_NODE, node::RAY_PASS);
 
 
             // ensure ray pass runs after main pass

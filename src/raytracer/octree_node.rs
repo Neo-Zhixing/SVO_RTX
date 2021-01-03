@@ -7,6 +7,7 @@ use bevy::core::AsBytes;
 use bevy::render::render_graph::Node;
 use svo::octree::Octree;
 use crate::Voxel;
+use crate::raytracer::chunk::Chunk;
 
 
 #[derive(Debug)]
@@ -15,7 +16,7 @@ pub struct OctreeNode {
 }
 
 impl OctreeNode {
-    pub fn new<T>() -> Self {
+    pub fn new() -> Self {
         OctreeNode {
             command_queue: Default::default(),
         }
@@ -63,14 +64,18 @@ pub fn octree_node_system(
     render_resource_context: Res<Box<dyn RenderResourceContext>>,
     // PERF: this write on RenderResourceAssignments will prevent this system from running in parallel
     // with other systems that do the same
+    chunks: Res<Assets<Chunk>>,
     mut render_resource_bindings: ResMut<RenderResourceBindings>,
-    query: Query<(&Octree<Voxel>, )>,
+    query: Query<(&Handle<Chunk>, )>,
 ) {
     let render_resource_context = &**render_resource_context;
 
-    for (octree, ) in query.iter() {
+    for (chunk_handle, ) in query.iter() {
         if let Some(staging_buffer) = state.staging_buffer {
         } else {
+            println!("Buffer created");
+            let chunk = chunks.get(chunk_handle).unwrap();
+            let octree = &chunk.octree;
             // Temp code for writing buffer
             let octree_buffer = render_resource_context.create_buffer(BufferInfo {
                 size: octree.total_data_size(),
@@ -84,7 +89,7 @@ pub fn octree_node_system(
                 mapped_at_creation: true
             });
             render_resource_bindings.set(
-                "Octree",
+                "Chunk",
                 RenderResourceBinding::Buffer {
                     buffer: octree_buffer,
                     range: 0..octree.total_data_size() as u64,

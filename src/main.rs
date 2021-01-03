@@ -51,12 +51,12 @@ fn setup(
     let chunk_handle = chunks.add(chunk);
 
     commands
+        .spawn((chunk_handle, ))
         .spawn(OctreeRaytracerBundle::default())
         .spawn(Camera3dBundle {
             transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0))
                 .looking_at(Vec3::default(), Vec3::unit_y()),
             ..Default::default()
         })
-        //.spawn((chunk_handle, ))
         .with(FlyCamera::default());;
 }

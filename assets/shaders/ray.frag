@@ -27,6 +27,10 @@ layout(set = 1, binding = 0) uniform Camera3dProjection {
     mat4 transform;
     PerspectiveProjection projection;
 };
+layout(set = 2, binding = 0) readonly buffer Chunk {
+    OctreeNode nodes[];
+};
+
 
 void main() {
     vec2 pixel = vec2(v_tex_coords.x * projection.aspect_ratio, v_tex_coords.y) * tan(projection.fov / 2);
