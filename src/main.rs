@@ -54,7 +54,7 @@ fn setup(
         .spawn((chunk_handle, ))
         .spawn(OctreeRaytracerBundle::default())
         .spawn(Camera3dBundle {
-            transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0))
+            transform: Transform::from_translation(Vec3::new(0.0, 0.0, 10.0))
                 .looking_at(Vec3::default(), Vec3::unit_y()),
             ..Default::default()
         })

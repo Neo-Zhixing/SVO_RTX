@@ -31,16 +31,54 @@ layout(set = 2, binding = 0) readonly buffer Chunk {
     OctreeNode nodes[];
 };
 
+struct Ray {
+    vec3 origin;
+    vec3 dir;
+};
 
-void main() {
+struct AABB {
+    vec3 min;
+    vec3 max;
+};
+
+Ray generate_ray() {
     vec2 pixel = vec2(v_tex_coords.x * projection.aspect_ratio, v_tex_coords.y) * tan(projection.fov / 2);
     vec4 pixel_camera_space = vec4(pixel, -projection.near, 1.0);
     vec4 pixel_world_space_homo = transform * pixel_camera_space;
     vec3 pixel_world_space = pixel_world_space_homo.xyz / pixel_world_space_homo.w;
     vec4 origin_world_space_homo = transform * vec4(0.0, 0.0, 0.0, 1.0);
 
-    vec3 origin_world_space = origin_world_space_homo.xyz / origin_world_space_homo.w;
-    vec3 ray_world_space = normalize(pixel_world_space - origin_world_space);
+    Ray ray;
+    ray.origin = origin_world_space_homo.xyz / origin_world_space_homo.w;
+    ray.dir = normalize(pixel_world_space - ray.origin);
+    return ray;
+}
+void intersectAABB(Ray ray, AABB box, out float t_min, out float t_max) {
+    vec3 tMin = (box.min - ray.origin) / ray.dir;
+    vec3 tMax = (box.max - ray.origin) / ray.dir;
+    vec3 t1 = min(tMin, tMax);
+    vec3 t2 = max(tMin, tMax);
+    t_min = max(max(t1.x, t1.y), t1.z);
+    t_max = min(min(t2.x, t2.y), t2.z);
+}
 
-    f_color = vec4(ray_world_space.x, 0.0, 0.0, 1.0);
+void main() {
+    Ray ray = generate_ray();
+
+    AABB aabb;
+    aabb.min = vec3(0,0,0);
+    aabb.max = vec3(1,1,1);
+
+    float t_min, t_max;
+    intersectAABB(ray, aabb, t_min, t_max);
+    vec3 entry_point = ray.origin + ray.dir * t_min;
+
+    if (0 < t_min && t_min < t_max) {
+        // intersected
+        f_color = vec4(1.0, 0.0, 0.0, 1.0);
+    } else {
+        // no intersection
+        f_color = vec4(0.0, 0.0, 0.0, 1.0);
+    }
+
 }
