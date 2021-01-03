@@ -1,4 +1,6 @@
-#version 450
+#version 460
+#extension GL_EXT_shader_16bit_storage : require
+#extension GL_EXT_shader_8bit_storage : require
 
 layout(location=0) out vec4 f_color;
 layout(location=0) in vec2 v_tex_coords;
@@ -9,6 +11,15 @@ struct PerspectiveProjection {
     float near;
     float far;
 };
+
+struct OctreeNode {
+    uint8_t _padding1;
+    uint8_t freemask;
+    uint16_t _padding2;
+    uint children;
+    uint16_t data[8];
+};
+
 layout(set = 0, binding = 0) uniform Camera {
     mat4 ViewProj;
 };

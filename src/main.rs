@@ -17,6 +17,8 @@ use bevy::{
     },
 };
 use bevy_fly_camera::{FlyCamera, FlyCameraPlugin};
+use svo::octree::Octree;
+use crate::raytracer::chunk::{Chunk, Voxel};
 
 mod raytracer;
 
@@ -35,10 +37,18 @@ fn setup(
     commands: &mut Commands,
     asset_server: ResMut<AssetServer>,
     mut pipelines: ResMut<Assets<PipelineDescriptor>>,
-    mut meshes: ResMut<Assets<Mesh>>,
+    mut chunks: ResMut<Assets<Chunk>>,
     mut render_graph: ResMut<RenderGraph>,
 ) {
     // Watch for changes
+
+    let lod = 6;
+    let octree: Octree<Voxel> = Octree::from_signed_distance_field(|l: glam::Vec3| {
+        0.4 - l.distance(Vec3::new(0.5, 0.5, 0.5))
+    }, Voxel(1), lod);
+    let chunk = Chunk { octree };
+
+    let chunk_handle = chunks.add(chunk);
 
     commands
         .spawn(OctreeRaytracerBundle::default())
@@ -47,5 +57,6 @@ fn setup(
                 .looking_at(Vec3::default(), Vec3::unit_y()),
             ..Default::default()
         })
+        //.spawn((chunk_handle, ))
         .with(FlyCamera::default());;
 }

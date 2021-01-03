@@ -10,3 +10,4 @@ edition = "2018"
 glam = "*"
 bevy = "0.4"
 bevy_fly_camera = "0.6"
+svo = { path = "../svo" }

@@ -18,8 +18,10 @@ use bevy::render::texture::{
 };
 use bevy::window::WindowId;
 use crate::raytracer::projection_node::CameraProjectionNode;
+use crate::raytracer::chunk::Chunk;
 
 pub mod projection_node;
+pub mod chunk;
 
 pub const RAY_PIPELINE_HANDLE: HandleUntyped =
     HandleUntyped::weak_from_u64(PipelineDescriptor::TYPE_UUID, 0x786f7ab62875ebbc);
@@ -127,6 +129,8 @@ impl Plugin for OctreeRayTracerPlugin {
                 &quad_positions,
             )
         };
+        app
+            .add_asset::<Chunk>();
         app.add_resource(RayTracerSharedResources { quad_buffer_id });
 
         let resources = app.resources();
