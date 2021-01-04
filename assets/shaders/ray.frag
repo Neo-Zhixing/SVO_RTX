@@ -12,7 +12,7 @@ struct PerspectiveProjection {
     float far;
 };
 
-struct OctreeNode {
+struct Node {
     uint8_t _padding1;
     uint8_t freemask;
     uint16_t _padding2;
@@ -28,17 +28,12 @@ layout(set = 1, binding = 0) uniform Camera3dProjection {
     PerspectiveProjection projection;
 };
 layout(set = 2, binding = 0) readonly buffer Chunk {
-    OctreeNode nodes[];
+    Node nodes[];
 };
 
 struct Ray {
     vec3 origin;
     vec3 dir;
-};
-
-struct AABB {
-    vec3 min;
-    vec3 max;
 };
 
 Ray generate_ray() {
@@ -53,32 +48,85 @@ Ray generate_ray() {
     ray.dir = normalize(pixel_world_space - ray.origin);
     return ray;
 }
-void intersectAABB(Ray ray, AABB box, out float t_min, out float t_max) {
-    vec3 tMin = (box.min - ray.origin) / ray.dir;
-    vec3 tMax = (box.max - ray.origin) / ray.dir;
+vec2 intersectAABB(Ray ray, vec4 box) {
+    vec3 box_min = box.xyz;
+    vec3 box_max = box_min + box.w;
+    vec3 tMin = (box_min - ray.origin) / ray.dir;
+    vec3 tMax = (box_max - ray.origin) / ray.dir;
     vec3 t1 = min(tMin, tMax);
     vec3 t2 = max(tMin, tMax);
-    t_min = max(max(t1.x, t1.y), t1.z);
-    t_max = min(min(t2.x, t2.y), t2.z);
+    float t_min = max(max(t1.x, t1.y), t1.z);
+    float t_max = min(min(t2.x, t2.y), t2.z);
+    return vec2(t_min, t_max);
 }
+
+// Given a mask an a location, returns n where the given '1' on the location
+// is the nth '1' counting from the Least Significant Bit.
+uint mask_location_nth_one(uint mask, uint location) {
+    return bitCount(mask & ((1 << location) - 1));
+}
+
+
+uint material_at_position(inout vec4 box, vec3 position) {
+    uint node_index = 0; // Assume root node
+
+    while(true) {
+        // start
+        // Calculate new box location
+        box.w = box.w / 2;
+        vec3 box_midpoint = box.xyz + box.w;
+        vec3 s = step(box_midpoint, position);
+        box.xyz = box.xyz + s * box.w;
+
+
+        uint child_index = uint(dot(s, vec3(4,2,1)));
+        uint freemask = uint(nodes[node_index].freemask);
+        if ((freemask & (1 << child_index)) == 0) {
+            // is a leaf node
+            return uint(nodes[node_index].data[child_index]);
+        } else {
+            // has children
+            uint child_offset = mask_location_nth_one(freemask, child_index);
+            node_index = nodes[node_index].children + child_offset;
+        }
+    }
+}
+
 
 void main() {
     Ray ray = generate_ray();
 
-    AABB aabb;
-    aabb.min = vec3(0,0,0);
-    aabb.max = vec3(1,1,1);
 
-    float t_min, t_max;
-    intersectAABB(ray, aabb, t_min, t_max);
-    vec3 entry_point = ray.origin + ray.dir * t_min;
 
-    if (0 < t_min && t_min < t_max) {
-        // intersected
-        f_color = vec4(1.0, 0.0, 0.0, 1.0);
-    } else {
-        // no intersection
+
+    vec4 box = vec4(0,0,0,1);
+    vec2 intersection = intersectAABB(ray, box);
+    float t_min = intersection.x;
+    uint material_id = 0;
+
+    if (!(0 < intersection.x && intersection.x < intersection.y)) {
+        // not hit
         f_color = vec4(0.0, 0.0, 0.0, 1.0);
+        return;
     }
 
+
+    for (uint i = 0; i < 50; i++) {
+        vec3 entry_point = ray.origin + ray.dir * t_min;
+
+        vec4 hitbox = box;
+        material_id = material_at_position(hitbox, entry_point);
+        if (material_id > 0) {
+            break;
+        }
+        // calculate the next t_min
+        vec2 new_intersection = intersectAABB(ray, hitbox);
+        t_min = new_intersection.y + 0.00001;
+    }
+
+    if (material_id == 0) {
+        f_color = vec4(0.0, 0.1, 0.0, 1.0);
+    } else {
+        f_color = vec4(1.0, 0.0, 0.0, 1.0);
+    }
 }
