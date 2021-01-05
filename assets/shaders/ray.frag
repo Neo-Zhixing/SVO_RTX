@@ -111,7 +111,7 @@ void main() {
 
     if (!(0 < intersection.x && intersection.x < intersection.y)) {
         // not hit
-        f_color = vec4(0.0, 0.0, 0.0, 1.0);
+        f_color = vec4(1.0, 1.0, 1.0, 1.0);
         return;
     }
 
@@ -119,6 +119,9 @@ void main() {
         vec4 hitbox = box;
         material_id = material_at_position(hitbox, entry_point);
         if (material_id > 0) {
+            // get the depth info from entry_point
+            vec4 entry_point_camera_space = ViewProj * vec4(entry_point, 1.0);
+            gl_FragDepth = entry_point_camera_space.z/entry_point_camera_space.w;
             break;
         }
         // calculate the next t_min
