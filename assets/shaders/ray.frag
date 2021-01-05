@@ -41,23 +41,31 @@ Ray generate_ray() {
     vec4 pixel_camera_space = vec4(pixel, -projection.near, 1.0);
     vec4 pixel_world_space_homo = transform * pixel_camera_space;
     vec3 pixel_world_space = pixel_world_space_homo.xyz / pixel_world_space_homo.w;
-    vec4 origin_world_space_homo = transform * vec4(0.0, 0.0, 0.0, 1.0);
 
     Ray ray;
-    ray.origin = origin_world_space_homo.xyz / origin_world_space_homo.w;
+    ray.origin = transform[3].xyz;
     ray.dir = normalize(pixel_world_space - ray.origin);
     return ray;
 }
-vec2 intersectAABB(Ray ray, vec4 box) {
+vec2 intersectAABB(vec3 origin, vec3 dir, vec4 box) {
     vec3 box_min = box.xyz;
     vec3 box_max = box_min + box.w;
-    vec3 tMin = (box_min - ray.origin) / ray.dir;
-    vec3 tMax = (box_max - ray.origin) / ray.dir;
+    vec3 tMin = (box_min - origin) / dir;
+    vec3 tMax = (box_max - origin) / dir;
     vec3 t1 = min(tMin, tMax);
     vec3 t2 = max(tMin, tMax);
     float t_min = max(max(t1.x, t1.y), t1.z);
     float t_max = min(min(t2.x, t2.y), t2.z);
     return vec2(t_min, t_max);
+}
+
+bool containsAABB(vec3 point, vec4 box) {
+    vec3 min = box.xyz;
+    vec3 max = min + box.w;
+
+    vec3 s = step(min, point) - step(max, point);
+    bvec3 bs = bvec3(s);
+    return all(bs);
 }
 
 // Given a mask an a location, returns n where the given '1' on the location
@@ -96,12 +104,9 @@ uint material_at_position(inout vec4 box, vec3 position) {
 void main() {
     Ray ray = generate_ray();
 
-
-
-
     vec4 box = vec4(0,0,0,1);
-    vec2 intersection = intersectAABB(ray, box);
-    float t_min = intersection.x;
+    vec2 intersection = intersectAABB(ray.origin, ray.dir, box);
+    vec3 entry_point = ray.origin + intersection.x * ray.dir + sign(ray.dir) * box.w * 0.00001;
     uint material_id = 0;
 
     if (!(0 < intersection.x && intersection.x < intersection.y)) {
@@ -110,23 +115,23 @@ void main() {
         return;
     }
 
-
-    for (uint i = 0; i < 50; i++) {
-        vec3 entry_point = ray.origin + ray.dir * t_min;
-
+    for(uint counter = 0; counter < 50 && containsAABB(entry_point, box); counter++) {
         vec4 hitbox = box;
         material_id = material_at_position(hitbox, entry_point);
         if (material_id > 0) {
             break;
         }
         // calculate the next t_min
-        vec2 new_intersection = intersectAABB(ray, hitbox);
-        t_min = new_intersection.y + 0.00001;
+        vec2 new_intersection = intersectAABB(entry_point, ray.dir, hitbox);
+
+        entry_point += ray.dir * new_intersection.y + sign(ray.dir) * hitbox.w * 0.00001;
     }
 
     if (material_id == 0) {
-        f_color = vec4(0.0, 0.1, 0.0, 1.0);
-    } else {
+        f_color = vec4(0.0, 0.0, 0.0, 1.0);
+    } else if (material_id == 2) {
         f_color = vec4(1.0, 0.0, 0.0, 1.0);
+    } else {
+        f_color = vec4(0.0, 1.0, 0.0, 1.0);
     }
 }

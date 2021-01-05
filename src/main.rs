@@ -44,7 +44,8 @@ fn setup(
 
     let lod = 4;
     let octree: Octree<Voxel> = Octree::from_signed_distance_field(|l: glam::Vec3| {
-        0.4 - l.distance(Vec3::new(0.5, 0.5, 0.5))
+        let d = l - Vec3::new(0.5, 0.5, 0.5);
+        0.4 - d.x.abs().max(d.y.abs()).max(d.z.abs())
     }, Voxel(1), lod);
     let chunk = Chunk { octree };
 
