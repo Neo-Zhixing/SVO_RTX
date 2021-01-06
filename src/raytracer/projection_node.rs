@@ -69,16 +69,20 @@ pub fn projection_node_system(
     // PERF: this write on RenderResourceAssignments will prevent this system from running in parallel
     // with other systems that do the same
     mut render_resource_bindings: ResMut<RenderResourceBindings>,
-    query: Query<(&GlobalTransform, &PerspectiveProjection)>,
+    windows: Res<Windows>,
+    query: Query<(&GlobalTransform, &PerspectiveProjection, &Camera)>,
 ) {
     let render_resource_context = &**render_resource_context;
 
-    let (global_transform, perspective_projection) = if let Some(entity) = active_cameras.get(&state.camera_name) {
+    let (global_transform, perspective_projection, camera) = if let Some(entity) = active_cameras.get(&state.camera_name) {
         query.get(entity).unwrap()
     } else {
         return;
     };
-    let data_size = std::mem::size_of::<[f32; 20]>();
+
+    let window = windows.get(camera.window).unwrap();
+
+    let data_size = std::mem::size_of::<[f32; 22]>();
 
     let staging_buffer = if let Some(staging_buffer) = state.staging_buffer {
         render_resource_context.map_buffer(staging_buffer);
@@ -109,11 +113,13 @@ pub fn projection_node_system(
         staging_buffer
     };
 
-    let projection_data: [f32; 4] = [
+    let projection_data: [f32; 6] = [
         perspective_projection.fov,
         perspective_projection.aspect_ratio,
         perspective_projection.near,
         perspective_projection.far,
+        window.physical_width() as f32,
+        window.physical_height() as f32
     ];
     let transform_data: [f32; 16] = global_transform.compute_matrix().to_cols_array();
 

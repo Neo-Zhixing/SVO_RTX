@@ -3,13 +3,13 @@
 #extension GL_EXT_shader_8bit_storage : require
 
 layout(location=0) out vec4 f_color;
-layout(location=0) in vec2 v_tex_coords;
 
 struct PerspectiveProjection {
     float fov;
     float aspect_ratio;
     float near;
     float far;
+    vec2 dimensions;
 };
 
 struct Node {
@@ -37,7 +37,12 @@ struct Ray {
 };
 
 Ray generate_ray() {
-    vec2 pixel = vec2(v_tex_coords.x * projection.aspect_ratio, v_tex_coords.y) * tan(projection.fov / 2);
+    vec2 pixel_ndc = gl_FragCoord.xy / projection.dimensions;
+    vec2 pixel_screen = pixel_ndc * 2 - 1;
+    vec2 pixel = pixel_screen * tan(projection.fov / 2);
+    pixel.x *= projection.aspect_ratio;
+    pixel.y *= -1;
+
     vec4 pixel_camera_space = vec4(pixel, -projection.near, 1.0);
     vec4 pixel_world_space_homo = transform * pixel_camera_space;
     vec3 pixel_world_space = pixel_world_space_homo.xyz / pixel_world_space_homo.w;
@@ -111,7 +116,7 @@ void main() {
 
     if (!(0 < intersection.x && intersection.x < intersection.y)) {
         // not hit
-        f_color = vec4(1.0, 1.0, 1.0, 1.0);
+        f_color = vec4(1.0, 1.0, 0.3, 1.0);
         return;
     }
 

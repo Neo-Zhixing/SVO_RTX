@@ -20,6 +20,8 @@ use bevy::window::WindowId;
 use crate::raytracer::projection_node::CameraProjectionNode;
 use crate::raytracer::chunk::Chunk;
 use crate::raytracer::octree_node::OctreeNode;
+use bevy::prelude::shape::Cube;
+use bevy::core::AsBytes;
 
 pub mod projection_node;
 pub mod chunk;
@@ -32,7 +34,8 @@ pub const RAY_PIPELINE_HANDLE: HandleUntyped =
 pub struct OctreeRayTracerPlugin;
 
 pub struct RayTracerSharedResources {
-    quad_buffer_id: BufferId,
+    cube_vertex_buffer: BufferId,
+    cube_index_buffer: BufferId,
 }
 
 /// A component that indicates that an entity should be drawn in the "main pass"
@@ -119,7 +122,7 @@ impl Plugin for OctreeRayTracerPlugin {
             draw_raytracing_pipelines_system.system(),
         );
 
-        let quad_buffer_id = {
+        let (cube_vertex_buffer, cube_index_buffer) = {
             // Adding the quad mesh
             let render_resource_context = app
                 .resources()
@@ -127,20 +130,44 @@ impl Plugin for OctreeRayTracerPlugin {
                 .unwrap();
             let render_resource_context = &**render_resource_context;
 
-            let quad_positions: [[f32; 2]; 4] =
-                [[-1.0, 1.0], [1.0, 1.0], [-1.0, -1.0], [1.0, -1.0]];
-            let quad_positions: [u8; 32] = unsafe { std::mem::transmute(quad_positions) };
-            render_resource_context.create_buffer_with_data(
+            let vertices: [f32; 24] = [
+                0.0, 0.0, 0.0, // 0
+                0.0, 0.0, 1.0, // 1
+                0.0,1.0, 0.0, // 2
+                0.0,1.0, 1.0, // 3
+                1.0, 0.0, 0.0, // 4
+                1.0, 0.0, 1.0, // 5
+                1.0, 1.0, 0.0, // 6
+                1.0, 1.0, 1.0 // 7
+            ];
+            let vertex_buffer = render_resource_context.create_buffer_with_data(
                 BufferInfo {
                     buffer_usage: BufferUsage::VERTEX,
                     ..Default::default()
                 },
-                &quad_positions,
-            )
+                &vertices.as_bytes(),
+            );
+            let indices: [u16; 14] = [
+                3, 7, 1, 5,
+                4, 7, 6, 3,
+                2, 1, 0, 4,
+                2, 6
+            ];
+            let index_buffer = render_resource_context.create_buffer_with_data(
+                BufferInfo {
+                    buffer_usage: BufferUsage::INDEX,
+                    ..Default::default()
+                },
+                &indices.as_bytes()
+            );
+            (vertex_buffer, index_buffer)
         };
         app
             .add_asset::<Chunk>();
-        app.add_resource(RayTracerSharedResources { quad_buffer_id });
+        app.add_resource(RayTracerSharedResources {
+            cube_vertex_buffer,
+            cube_index_buffer
+        });
 
         let resources = app.resources();
         let asset_server = resources.get_mut::<AssetServer>().unwrap();
@@ -223,7 +250,7 @@ impl Default for OctreeRaytracerBundle {
                         dynamic_bindings: Default::default(),
                         vertex_buffer_descriptor: VertexBufferDescriptor {
                             name: "ray_blit_vertex_buffer".into(),
-                            stride: (std::mem::size_of::<f32>() * 2) as u64,
+                            stride: (std::mem::size_of::<f32>() * 3) as u64,
                             step_mode: InputStepMode::Vertex,
                             attributes: vec![VertexAttributeDescriptor {
                                 name: "position".into(),
@@ -254,7 +281,8 @@ pub fn draw_raytracing_pipelines_system(
     mut query: Query<(&mut Draw, &mut RayTracer)>,
 ) {
     for (mut draw, mut ray_tracer) in query.iter_mut() {
-        ray_tracer.bindings.vertex_attribute_buffer = Some(shared_resources.quad_buffer_id);
+        ray_tracer.bindings.vertex_attribute_buffer = Some(shared_resources.cube_vertex_buffer);
+        ray_tracer.bindings.index_buffer = Some(shared_resources.cube_index_buffer);
 
         draw_context
             .set_pipeline(
@@ -271,10 +299,6 @@ pub fn draw_raytracing_pipelines_system(
         draw_context
             .set_vertex_buffers_from_bindings(&mut draw, &[&ray_tracer.bindings])
             .unwrap();
-
-        draw.render_command(RenderCommand::Draw {
-            vertices: 0..4,
-            instances: 0..1,
-        });
+        draw.draw_indexed(0..14, 0, 0..1);
     }
 }
