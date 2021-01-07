@@ -28,6 +28,7 @@ layout(set = 1, binding = 0) uniform Camera3dProjection {
     PerspectiveProjection projection;
 };
 layout(set = 2, binding = 0) readonly buffer Chunk {
+    vec4 bounding_box;
     Node nodes[];
 };
 
@@ -109,7 +110,7 @@ uint material_at_position(inout vec4 box, vec3 position) {
 void main() {
     Ray ray = generate_ray();
 
-    vec4 box = vec4(0,0,0,1);
+    vec4 box = bounding_box;
     vec2 intersection = intersectAABB(ray.origin, ray.dir, box);
     vec3 entry_point = ray.origin + intersection.x * ray.dir + sign(ray.dir) * box.w * 0.00001;
     uint material_id = 0;

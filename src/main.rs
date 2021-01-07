@@ -1,4 +1,4 @@
-use crate::raytracer::{OctreeRayTracerPlugin, OctreeRaytracerBundle};
+use crate::raytracer::{OctreeRayTracerPlugin};
 use bevy::render::draw::DrawContext;
 use bevy::render::mesh::Indices;
 use bevy::render::pipeline::{
@@ -18,7 +18,7 @@ use bevy::{
 };
 use bevy_fly_camera::{FlyCamera, FlyCameraPlugin};
 use svo::octree::Octree;
-use crate::raytracer::chunk::{Chunk, Voxel};
+use crate::raytracer::chunk::{Chunk, Voxel, ChunkBundle};
 use bevy::render::camera::PerspectiveProjection;
 
 mod raytracer;
@@ -52,8 +52,7 @@ fn setup(
     let chunk_handle = chunks.add(chunk);
 
     commands
-        .spawn((chunk_handle, ))
-        .spawn(OctreeRaytracerBundle::default())
+        .spawn(ChunkBundle::new(chunk_handle))
         .spawn(Camera3dBundle {
             transform: Transform::from_translation(Vec3::new(0.0, 0.0, 10.0))
                 .looking_at(Vec3::default(), Vec3::unit_y()),

@@ -19,13 +19,13 @@ use bevy::render::texture::{
 use bevy::window::WindowId;
 use crate::raytracer::projection_node::CameraProjectionNode;
 use crate::raytracer::chunk::Chunk;
-use crate::raytracer::octree_node::OctreeNode;
+use crate::raytracer::chunk_node::ChunkNode;
 use bevy::prelude::shape::Cube;
 use bevy::core::AsBytes;
 
 pub mod projection_node;
 pub mod chunk;
-pub mod octree_node;
+pub mod chunk_node;
 
 pub const RAY_PIPELINE_HANDLE: HandleUntyped =
     HandleUntyped::weak_from_u64(PipelineDescriptor::TYPE_UUID, 0x786f7ab62875ebbc);
@@ -107,7 +107,7 @@ impl Plugin for OctreeRayTracerPlugin {
 
             // Octree chunks
             render_graph
-                .add_system_node(node::OCTREE_CHUNK_NODE, OctreeNode::new());
+                .add_system_node(node::OCTREE_CHUNK_NODE, ChunkNode::new());
             render_graph
                 .add_node_edge(node::OCTREE_CHUNK_NODE, node::RAY_PASS);
 
@@ -233,52 +233,6 @@ pub struct RayTracer {
 
     #[reflect(ignore)]
     bindings: RenderResourceBindings,
-}
-
-#[derive(Bundle)]
-pub struct OctreeRaytracerBundle {
-    pub draw: Draw,
-    pub ray_tracer: RayTracer,
-    pub visible: Visible,
-    pub ray_pass: RayPass,
-}
-
-impl Default for OctreeRaytracerBundle {
-    fn default() -> Self {
-        OctreeRaytracerBundle {
-            ray_tracer: RayTracer {
-                render_pipeline: RenderPipeline {
-                    pipeline: RAY_PIPELINE_HANDLE.typed(),
-                    specialization: PipelineSpecialization {
-                        sample_count: 1,
-                        index_format: IndexFormat::Uint16,
-                        shader_specialization: Default::default(),
-                        primitive_topology: PrimitiveTopology::TriangleStrip,
-                        dynamic_bindings: Default::default(),
-                        vertex_buffer_descriptor: VertexBufferDescriptor {
-                            name: "ray_blit_vertex_buffer".into(),
-                            stride: (std::mem::size_of::<f32>() * 3) as u64,
-                            step_mode: InputStepMode::Vertex,
-                            attributes: vec![VertexAttributeDescriptor {
-                                name: "position".into(),
-                                offset: 0,
-                                format: VertexFormat::Float3,
-                                shader_location: 0,
-                            }],
-                        },
-                    },
-                    dynamic_bindings_generation: std::usize::MAX,
-                },
-                bindings: Default::default(),
-            },
-            draw: Default::default(),
-            visible: Visible {
-                is_visible: true,
-                is_transparent: false,
-            },
-            ray_pass: RayPass,
-        }
-    }
 }
 
 pub fn draw_raytracing_pipelines_system(

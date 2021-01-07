@@ -11,19 +11,19 @@ use crate::raytracer::chunk::Chunk;
 
 
 #[derive(Debug)]
-pub struct OctreeNode {
+pub struct ChunkNode {
     command_queue: CommandQueue,
 }
 
-impl OctreeNode {
+impl ChunkNode {
     pub fn new() -> Self {
-        OctreeNode {
+        ChunkNode {
             command_queue: Default::default(),
         }
     }
 }
 
-impl Node for OctreeNode {
+impl Node for ChunkNode {
     fn update(
         &mut self,
         _world: &World,
@@ -36,12 +36,12 @@ impl Node for OctreeNode {
     }
 }
 
-impl SystemNode for OctreeNode {
+impl SystemNode for ChunkNode {
     fn get_system(&self, commands: &mut Commands) -> Box<dyn System<In = (), Out = ()>> {
-        let system = octree_node_system.system();
+        let system = chunk_node_system.system();
         commands.insert_local_resource(
             system.id(),
-            OctreeNodeState {
+            ChunkNodeState {
                 command_queue: self.command_queue.clone(),
                 octree_buffer: None,
                 staging_buffer: None,
@@ -52,39 +52,37 @@ impl SystemNode for OctreeNode {
 }
 
 #[derive(Debug, Default)]
-pub struct OctreeNodeState {
+pub struct ChunkNodeState {
     command_queue: CommandQueue,
     octree_buffer: Option<BufferId>,
     staging_buffer: Option<BufferId>,
 }
 
-pub fn octree_node_system(
-    mut state: Local<OctreeNodeState>,
-    active_cameras: Res<ActiveCameras>,
+pub fn chunk_node_system(
+    mut state: Local<ChunkNodeState>,
     render_resource_context: Res<Box<dyn RenderResourceContext>>,
-    // PERF: this write on RenderResourceAssignments will prevent this system from running in parallel
-    // with other systems that do the same
     chunks: Res<Assets<Chunk>>,
     mut render_resource_bindings: ResMut<RenderResourceBindings>,
-    query: Query<(&Handle<Chunk>, )>,
+    query: Query<(&Handle<Chunk>, &Vec4)>,
 ) {
     let render_resource_context = &**render_resource_context;
 
-    for (chunk_handle, ) in query.iter() {
+    for (chunk_handle, bounding_box) in query.iter() {
         if let Some(staging_buffer) = state.staging_buffer {
         } else {
-            println!("Buffer created");
             let chunk = chunks.get(chunk_handle).unwrap();
             let octree = &chunk.octree;
+            let bbox_size = std::mem::size_of::<Vec4>();
+            let data_size = octree.total_data_size() + bbox_size;
             // Temp code for writing buffer
             let octree_buffer = render_resource_context.create_buffer(BufferInfo {
-                size: octree.total_data_size(),
+                size: data_size,
                 buffer_usage: BufferUsage::STORAGE | BufferUsage::COPY_DST,
                 mapped_at_creation: false
             });
 
             let staging_buffer = render_resource_context.create_buffer(BufferInfo {
-                size: octree.total_data_size(),
+                size: data_size,
                 buffer_usage: BufferUsage::MAP_WRITE | BufferUsage::COPY_SRC,
                 mapped_at_creation: true
             });
@@ -92,7 +90,7 @@ pub fn octree_node_system(
                 "Chunk",
                 RenderResourceBinding::Buffer {
                     buffer: octree_buffer,
-                    range: 0..octree.total_data_size() as u64,
+                    range: 0..data_size as u64,
                     dynamic_index: None
                 }
             );
@@ -103,9 +101,10 @@ pub fn octree_node_system(
 
             render_resource_context.write_mapped_buffer(
                 staging_buffer,
-                0..octree.total_data_size() as u64,
+                0..data_size as u64,
                 &mut |data: &mut [u8], _renderer| {
-                    octree.copy_into_slice(data)
+                    data[0..bbox_size].copy_from_slice(bounding_box.as_bytes());
+                    octree.copy_into_slice(&mut data[bbox_size..data_size])
                 },
             );
             render_resource_context.unmap_buffer(staging_buffer);
