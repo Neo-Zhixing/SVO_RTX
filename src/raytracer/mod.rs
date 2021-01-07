@@ -5,7 +5,7 @@ use bevy::render::pass::{
     LoadOp, Operations, PassDescriptor, RenderPassColorAttachmentDescriptor,
     RenderPassDepthStencilAttachmentDescriptor, TextureAttachment,
 };
-use bevy::render::pipeline::{BlendDescriptor, ColorStateDescriptor, ColorWrite, CompareFunction, DepthStencilStateDescriptor, IndexFormat, InputStepMode, PipelineDescriptor, PipelineSpecialization, PrimitiveTopology, RenderPipeline, StencilStateDescriptor, StencilStateFaceDescriptor, VertexAttributeDescriptor, VertexBufferDescriptor, VertexFormat, BlendFactor, BlendOperation};
+use bevy::render::pipeline::{BlendDescriptor, ColorStateDescriptor, ColorWrite, CompareFunction, DepthStencilStateDescriptor, IndexFormat, InputStepMode, PipelineDescriptor, PipelineSpecialization, PrimitiveTopology, RenderPipeline, StencilStateDescriptor, StencilStateFaceDescriptor, VertexAttributeDescriptor, VertexBufferDescriptor, VertexFormat, BlendFactor, BlendOperation, RasterizationStateDescriptor, FrontFace, CullMode};
 use bevy::render::render_graph::base as base_render_graph;
 use bevy::render::render_graph::{PassNode, RenderGraph, WindowSwapChainNode, WindowTextureNode};
 use bevy::render::renderer::{
@@ -184,7 +184,14 @@ impl Plugin for OctreeRayTracerPlugin {
                 sample_count: 1,
                 sample_mask: !0,
                 alpha_to_coverage_enabled: false,
-                rasterization_state: None,
+                rasterization_state: Some(RasterizationStateDescriptor {
+                    front_face: FrontFace::Cw,
+                    cull_mode: CullMode::Front,
+                    depth_bias: 0,
+                    depth_bias_slope_scale: 0.0,
+                    depth_bias_clamp: 0.0,
+                    clamp_depth: false
+                }),
                 depth_stencil_state: Some(DepthStencilStateDescriptor {
                     format: TextureFormat::Depth32Float,
                     depth_write_enabled: true,

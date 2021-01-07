@@ -19,6 +19,7 @@ use bevy::{
 use bevy_fly_camera::{FlyCamera, FlyCameraPlugin};
 use svo::octree::Octree;
 use crate::raytracer::chunk::{Chunk, Voxel};
+use bevy::render::camera::PerspectiveProjection;
 
 mod raytracer;
 
@@ -44,8 +45,7 @@ fn setup(
 
     let lod = 4;
     let octree: Octree<Voxel> = Octree::from_signed_distance_field(|l: glam::Vec3| {
-        let d = l - Vec3::new(0.5, 0.5, 0.5);
-        0.4 - d.x.abs().max(d.y.abs()).max(d.z.abs())
+        0.4 - l.distance(Vec3::new(0.5, 0.5, 0.5))
     }, Voxel(1), lod);
     let chunk = Chunk { octree };
 
@@ -57,6 +57,10 @@ fn setup(
         .spawn(Camera3dBundle {
             transform: Transform::from_translation(Vec3::new(0.0, 0.0, 10.0))
                 .looking_at(Vec3::default(), Vec3::unit_y()),
+            perspective_projection: PerspectiveProjection {
+                near: 0.1,
+                ..Default::default()
+            },
             ..Default::default()
         })
         .with(FlyCamera::default());;

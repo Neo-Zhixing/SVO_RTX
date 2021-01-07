@@ -43,7 +43,7 @@ Ray generate_ray() {
     pixel.x *= projection.aspect_ratio;
     pixel.y *= -1;
 
-    vec4 pixel_camera_space = vec4(pixel, -projection.near, 1.0);
+    vec4 pixel_camera_space = vec4(pixel, -1, 1.0);
     vec4 pixel_world_space_homo = transform * pixel_camera_space;
     vec3 pixel_world_space = pixel_world_space_homo.xyz / pixel_world_space_homo.w;
 
@@ -113,12 +113,6 @@ void main() {
     vec2 intersection = intersectAABB(ray.origin, ray.dir, box);
     vec3 entry_point = ray.origin + intersection.x * ray.dir + sign(ray.dir) * box.w * 0.00001;
     uint material_id = 0;
-
-    if (!(0 < intersection.x && intersection.x < intersection.y)) {
-        // not hit
-        f_color = vec4(1.0, 1.0, 0.3, 1.0);
-        return;
-    }
 
     for(uint counter = 0; counter < 50 && containsAABB(entry_point, box); counter++) {
         vec4 hitbox = box;
