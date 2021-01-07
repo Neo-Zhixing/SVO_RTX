@@ -83,13 +83,14 @@ pub fn projection_node_system(
     let window = windows.get(camera.window).unwrap();
 
     let data_size = std::mem::size_of::<[f32; 22]>();
+    let data_size_padded = std::mem::size_of::<[f32; 24]>();
 
     let staging_buffer = if let Some(staging_buffer) = state.staging_buffer {
         render_resource_context.map_buffer(staging_buffer);
         staging_buffer
     } else {
         let buffer = render_resource_context.create_buffer(BufferInfo {
-            size: data_size,
+            size: data_size_padded,
             buffer_usage: BufferUsage::COPY_DST | BufferUsage::UNIFORM,
             mapped_at_creation: false,
         });
@@ -97,7 +98,7 @@ pub fn projection_node_system(
             &(state.camera_name.to_owned() + "Projection"),
             RenderResourceBinding::Buffer {
                 buffer,
-                range: 0..data_size as u64,
+                range: 0..data_size_padded as u64,
                 dynamic_index: None,
             },
         );

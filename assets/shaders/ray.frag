@@ -10,6 +10,7 @@ struct PerspectiveProjection {
     float near;
     float far;
     vec2 dimensions;
+    vec2 _padding;
 };
 
 struct Node {
@@ -109,6 +110,7 @@ uint material_at_position(inout vec4 box, vec3 position) {
 
 void main() {
     Ray ray = generate_ray();
+    gl_FragDepth = 1.0; // inf far by default
 
     vec4 box = bounding_box;
     vec2 intersection = intersectAABB(ray.origin, ray.dir, box);
@@ -121,7 +123,7 @@ void main() {
         if (material_id > 0) {
             // get the depth info from entry_point
             vec4 entry_point_camera_space = ViewProj * vec4(entry_point, 1.0);
-            gl_FragDepth = entry_point_camera_space.z/entry_point_camera_space.w;
+            gl_FragDepth = ((entry_point_camera_space.z/entry_point_camera_space.w) + 1.0) * 0.5 ;
             break;
         }
         // calculate the next t_min

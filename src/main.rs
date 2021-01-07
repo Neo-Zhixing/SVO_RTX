@@ -20,6 +20,7 @@ use bevy_fly_camera::{FlyCamera, FlyCameraPlugin};
 use svo::octree::Octree;
 use crate::raytracer::chunk::{Chunk, Voxel, ChunkBundle};
 use bevy::render::camera::PerspectiveProjection;
+use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, PrintDiagnosticsPlugin};
 
 mod raytracer;
 
@@ -31,6 +32,8 @@ fn main() {
         .add_plugin(FlyCameraPlugin)
         .add_startup_system(setup.system())
         .add_plugin(OctreeRayTracerPlugin::default())
+        .add_plugin(PrintDiagnosticsPlugin::default())
+        .add_plugin(FrameTimeDiagnosticsPlugin::default())
         .run();
 }
 
