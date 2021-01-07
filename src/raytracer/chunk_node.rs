@@ -7,7 +7,7 @@ use bevy::core::AsBytes;
 use bevy::render::render_graph::Node;
 use svo::octree::Octree;
 use crate::Voxel;
-use crate::raytracer::chunk::Chunk;
+use crate::raytracer::chunk::{Chunk, ChunkState};
 
 
 #[derive(Debug)]
@@ -43,8 +43,6 @@ impl SystemNode for ChunkNode {
             system.id(),
             ChunkNodeState {
                 command_queue: self.command_queue.clone(),
-                octree_buffer: None,
-                staging_buffer: None,
             },
         );
         Box::new(system)
@@ -54,8 +52,6 @@ impl SystemNode for ChunkNode {
 #[derive(Debug, Default)]
 pub struct ChunkNodeState {
     command_queue: CommandQueue,
-    octree_buffer: Option<BufferId>,
-    staging_buffer: Option<BufferId>,
 }
 
 pub fn chunk_node_system(
@@ -63,12 +59,12 @@ pub fn chunk_node_system(
     render_resource_context: Res<Box<dyn RenderResourceContext>>,
     chunks: Res<Assets<Chunk>>,
     mut render_resource_bindings: ResMut<RenderResourceBindings>,
-    query: Query<(&Handle<Chunk>, &Vec4)>,
+    mut query: Query<(&Handle<Chunk>, &mut ChunkState, &mut RenderPipelines)>,
 ) {
     let render_resource_context = &**render_resource_context;
 
-    for (chunk_handle, bounding_box) in query.iter() {
-        if let Some(staging_buffer) = state.staging_buffer {
+    for (chunk_handle, mut chunk_state, mut render_pipelines) in query.iter_mut() {
+        if let Some(staging_buffer) = chunk_state.staging_buffer {
         } else {
             let chunk = chunks.get(chunk_handle).unwrap();
             let octree = &chunk.octree;
@@ -86,7 +82,7 @@ pub fn chunk_node_system(
                 buffer_usage: BufferUsage::MAP_WRITE | BufferUsage::COPY_SRC,
                 mapped_at_creation: true
             });
-            render_resource_bindings.set(
+            render_pipelines.bindings.set(
                 "Chunk",
                 RenderResourceBinding::Buffer {
                     buffer: octree_buffer,
@@ -95,15 +91,15 @@ pub fn chunk_node_system(
                 }
             );
 
-            state.octree_buffer = Some(octree_buffer);
-            state.staging_buffer = Some(staging_buffer);
+            chunk_state.octree_buffer = Some(octree_buffer);
+            chunk_state.staging_buffer = Some(staging_buffer);
 
 
             render_resource_context.write_mapped_buffer(
                 staging_buffer,
                 0..data_size as u64,
                 &mut |data: &mut [u8], _renderer| {
-                    data[0..bbox_size].copy_from_slice(bounding_box.as_bytes());
+                    data[0..bbox_size].copy_from_slice(chunk.bounding_box.as_bytes());
                     octree.copy_into_slice(&mut data[bbox_size..data_size])
                 },
             );
@@ -118,6 +114,5 @@ pub fn chunk_node_system(
                 octree.total_data_size() as u64,
             );
         }
-
     }
 }

@@ -47,15 +47,24 @@ fn setup(
     // Watch for changes
 
     let lod = 4;
-    let octree: Octree<Voxel> = Octree::from_signed_distance_field(|l: glam::Vec3| {
+    let octree1: Octree<Voxel> = Octree::from_signed_distance_field(|l: glam::Vec3| {
         0.4 - l.distance(Vec3::new(0.5, 0.5, 0.5))
     }, Voxel(1), lod);
-    let chunk = Chunk { octree };
+    let chunk1 = Chunk::new(octree1, Vec4::new(16.0, 0.0, 0.0, 16.0));
 
-    let chunk_handle = chunks.add(chunk);
+    let chunk_handle1 = chunks.add(chunk1);
+
+    let octree2: Octree<Voxel> = Octree::from_signed_distance_field(|l: glam::Vec3| {
+        let d = l - Vec3::new(0.5, 0.5, 0.5);
+        0.4 - d.x.abs().max(d.y.abs()).max(d.z.abs())
+    }, Voxel(1), lod);
+    let chunk2 = Chunk::new(octree2, Vec4::new(0.0, 0.0, 0.0, 16.0));
+
+    let chunk_handle2 = chunks.add(chunk2);
 
     commands
-        .spawn(ChunkBundle::new(chunk_handle))
+        .spawn(ChunkBundle::new(chunk_handle1))
+        .spawn(ChunkBundle::new(chunk_handle2))
         .spawn(Camera3dBundle {
             transform: Transform::from_translation(Vec3::new(0.0, 0.0, 10.0))
                 .looking_at(Vec3::default(), Vec3::unit_y()),

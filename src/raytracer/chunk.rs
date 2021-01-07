@@ -7,6 +7,7 @@ use std::fmt::Result;
 use crate::raytracer::{RayPass, RAY_PIPELINE_HANDLE, RAY_PIPELINE_CUBE_HANDLE};
 use bevy::prelude::*;
 use bevy::render::pipeline::{RenderPipeline, PipelineSpecialization, IndexFormat, PrimitiveTopology, VertexBufferDescriptor, InputStepMode, VertexAttributeDescriptor, VertexFormat};
+use bevy::render::renderer::BufferId;
 
 #[derive(Copy, Clone, Default, Eq, PartialEq)]
 pub struct Voxel(pub u16);
@@ -26,7 +27,22 @@ impl fmt::Debug for Voxel {
 #[derive(TypeUuid)]
 #[uuid = "a036bb0e-f7c5-4d94-a2a8-5d7f61aace31"]
 pub struct Chunk {
-    pub octree: Octree<Voxel>
+    pub bounding_box: Vec4,
+    pub octree: Octree<Voxel>,
+}
+
+impl Chunk {
+    pub fn new(octree: Octree<Voxel>, bounding_box: Vec4) -> Self {
+        Chunk {
+            bounding_box,
+            octree,
+        }
+    }
+}
+
+pub struct ChunkState {
+    pub(crate) octree_buffer: Option<BufferId>,
+    pub(crate) staging_buffer: Option<BufferId>,
 }
 
 #[derive(Bundle)]
@@ -35,9 +51,9 @@ pub struct ChunkBundle {
     pub visible: Visible,
     pub ray_pass: RayPass,
     pub chunk: Handle<Chunk>,
-    pub bounding_box: Vec4,
     pub render_pipelines: RenderPipelines,
     pub mesh: Handle<Mesh>,
+    pub state: ChunkState,
 }
 
 impl ChunkBundle {
@@ -50,9 +66,12 @@ impl ChunkBundle {
                 is_transparent: false,
             },
             ray_pass: RayPass,
-            bounding_box: Vec4::new(0.0, 0.0, 0.0, 16.0),
             render_pipelines: RenderPipelines::from_handles(&[RAY_PIPELINE_HANDLE.typed()]),
-            mesh: RAY_PIPELINE_CUBE_HANDLE.typed()
+            mesh: RAY_PIPELINE_CUBE_HANDLE.typed(),
+            state: ChunkState {
+                octree_buffer: None,
+                staging_buffer: None,
+            }
         }
     }
 }
