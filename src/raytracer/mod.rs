@@ -22,6 +22,7 @@ use crate::raytracer::chunk::Chunk;
 use crate::raytracer::chunk_node::ChunkNode;
 use bevy::prelude::shape::Cube;
 use bevy::core::AsBytes;
+use bevy::render::mesh::Indices;
 
 pub mod projection_node;
 pub mod chunk;
@@ -29,13 +30,14 @@ pub mod chunk_node;
 
 pub const RAY_PIPELINE_HANDLE: HandleUntyped =
     HandleUntyped::weak_from_u64(PipelineDescriptor::TYPE_UUID, 0x786f7ab62875ebbc);
+pub const RAY_PIPELINE_CUBE_HANDLE: HandleUntyped =
+    HandleUntyped::weak_from_u64(Mesh::TYPE_UUID, 0x786f7ab62875ebbd);
 
 #[derive(Default)]
 pub struct OctreeRayTracerPlugin;
 
 pub struct RayTracerSharedResources {
-    cube_vertex_buffer: BufferId,
-    cube_index_buffer: BufferId,
+    cube_mesh: Handle<Mesh>,
 }
 
 /// A component that indicates that an entity should be drawn in the "main pass"
@@ -117,57 +119,30 @@ impl Plugin for OctreeRayTracerPlugin {
             render_graph.add_node_edge(base_render_graph::node::MAIN_PASS, node::RAY_PASS).unwrap();
         }
 
-        app.add_system_to_stage(
-            bevy::render::stage::DRAW,
-            draw_raytracing_pipelines_system.system(),
-        );
-
-        let (cube_vertex_buffer, cube_index_buffer) = {
-            // Adding the quad mesh
-            let render_resource_context = app
-                .resources()
-                .get::<Box<dyn RenderResourceContext>>()
-                .unwrap();
-            let render_resource_context = &**render_resource_context;
-
-            let vertices: [f32; 24] = [
-                0.0, 0.0, 0.0, // 0
-                0.0, 0.0, 1.0, // 1
-                0.0,1.0, 0.0, // 2
-                0.0,1.0, 1.0, // 3
-                1.0, 0.0, 0.0, // 4
-                1.0, 0.0, 1.0, // 5
-                1.0, 1.0, 0.0, // 6
-                1.0, 1.0, 1.0 // 7
-            ];
-            let vertex_buffer = render_resource_context.create_buffer_with_data(
-                BufferInfo {
-                    buffer_usage: BufferUsage::VERTEX,
-                    ..Default::default()
-                },
-                &vertices.as_bytes(),
-            );
-            let indices: [u16; 14] = [
+        {
+            let mut mesh = Mesh::new(PrimitiveTopology::TriangleStrip);
+            mesh.set_indices(Some(Indices::U16(vec![
                 3, 7, 1, 5,
                 4, 7, 6, 3,
                 2, 1, 0, 4,
                 2, 6
-            ];
-            let index_buffer = render_resource_context.create_buffer_with_data(
-                BufferInfo {
-                    buffer_usage: BufferUsage::INDEX,
-                    ..Default::default()
-                },
-                &indices.as_bytes()
-            );
-            (vertex_buffer, index_buffer)
+            ]
+            )));
+            mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, vec![
+                [0.0, 0.0, 0.0], // 0
+                [0.0, 0.0, 1.0], // 1
+                [0.0,1.0, 0.0], // 2
+                [0.0,1.0, 1.0], // 3
+                [1.0, 0.0, 0.0], // 4
+                [1.0, 0.0, 1.0], // 5
+                [1.0, 1.0, 0.0], // 6
+                [1.0, 1.0, 1.0] // 7
+            ]);
+            // Adding the quad mesh
+            app.resources().get_mut::<Assets<Mesh>>().unwrap().set_untracked(RAY_PIPELINE_CUBE_HANDLE, mesh);
         };
         app
             .add_asset::<Chunk>();
-        app.add_resource(RayTracerSharedResources {
-            cube_vertex_buffer,
-            cube_index_buffer
-        });
 
         let resources = app.resources();
         let asset_server = resources.get_mut::<AssetServer>().unwrap();
@@ -223,43 +198,5 @@ impl Plugin for OctreeRayTracerPlugin {
                 },
             },
         );
-    }
-}
-
-#[derive(Default, Reflect)]
-#[reflect(Component)]
-pub struct RayTracer {
-    render_pipeline: RenderPipeline,
-
-    #[reflect(ignore)]
-    bindings: RenderResourceBindings,
-}
-
-pub fn draw_raytracing_pipelines_system(
-    mut draw_context: DrawContext,
-    mut render_resource_bindings: ResMut<RenderResourceBindings>,
-    shared_resources: Res<RayTracerSharedResources>,
-    mut query: Query<(&mut Draw, &mut RayTracer)>,
-) {
-    for (mut draw, mut ray_tracer) in query.iter_mut() {
-        ray_tracer.bindings.vertex_attribute_buffer = Some(shared_resources.cube_vertex_buffer);
-        ray_tracer.bindings.index_buffer = Some(shared_resources.cube_index_buffer);
-
-        draw_context
-            .set_pipeline(
-                &mut draw,
-                &ray_tracer.render_pipeline.pipeline,
-                &ray_tracer.render_pipeline.specialization,
-            )
-            .unwrap();
-        let render_resource_bindings: &mut [&mut RenderResourceBindings] =
-            &mut [&mut ray_tracer.bindings, &mut render_resource_bindings];
-        draw_context
-            .set_bind_groups_from_bindings(&mut draw, render_resource_bindings)
-            .unwrap();
-        draw_context
-            .set_vertex_buffers_from_bindings(&mut draw, &[&ray_tracer.bindings])
-            .unwrap();
-        draw.draw_indexed(0..14, 0, 0..1);
     }
 }
