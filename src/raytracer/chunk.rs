@@ -9,12 +9,31 @@ use bevy::prelude::*;
 use bevy::render::pipeline::{RenderPipeline, PipelineSpecialization, IndexFormat, PrimitiveTopology, VertexBufferDescriptor, InputStepMode, VertexAttributeDescriptor, VertexFormat};
 use bevy::render::renderer::BufferId;
 
-#[derive(Copy, Clone, Default, Eq, PartialEq)]
+#[derive(Copy, Clone, Default, Eq, PartialEq, PartialOrd, Ord)]
 pub struct Voxel(pub u16);
 
 impl svo::Voxel for Voxel {
-    fn avg(voxels: [Self; 8]) -> Self {
-        unimplemented!()
+    fn avg(arr: &[Self; 8]) -> Self {
+        // find most frequent element
+        let mut arr = arr.clone();
+        arr.sort();
+
+        let mut count: u8 = 0;
+        let mut max_count: u8 = 0;
+        let mut max_element: u16 = 0;
+        let mut last_element: u16 = 0;
+        for i in &arr {
+            if i.0 != last_element {
+                if count > max_count {
+                    max_count = count;
+                    max_element = i.0;
+                }
+                count = 0;
+            }
+            count += 1;
+            last_element = i.0;
+        }
+        Voxel(max_element)
     }
 }
 

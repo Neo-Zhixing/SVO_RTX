@@ -23,6 +23,8 @@ use crate::raytracer::chunk_node::ChunkNode;
 use bevy::prelude::shape::Cube;
 use bevy::core::AsBytes;
 use bevy::render::mesh::Indices;
+use crate::lights::node::LightsNode;
+use crate::lights::{AmbientLight, SunLight};
 
 pub mod projection_node;
 pub mod chunk;
@@ -49,6 +51,7 @@ pub mod node {
     pub const RAY_PASS: &str = "ray_pass";
     pub const PROJECTION_NODE: &str = "ray_projection_node";
     pub const OCTREE_CHUNK_NODE: &str = "octree_chunk_node";
+    pub const LIGHT_NODE: &str = "light_node";
 }
 
 impl Plugin for OctreeRayTracerPlugin {
@@ -111,8 +114,15 @@ impl Plugin for OctreeRayTracerPlugin {
             render_graph
                 .add_system_node(node::OCTREE_CHUNK_NODE, ChunkNode::new());
             render_graph
-                .add_node_edge(node::OCTREE_CHUNK_NODE, node::RAY_PASS);
+                .add_node_edge(node::OCTREE_CHUNK_NODE, node::RAY_PASS)
+                .unwrap();
 
+            // Adding lights
+            render_graph
+                .add_system_node(node::LIGHT_NODE, LightsNode::new(16));
+            render_graph
+                .add_node_edge(node::LIGHT_NODE, node::RAY_PASS)
+                .unwrap();
 
             // ensure ray pass runs after main pass
             // So that pixels covered by UI / Mesh rendered objects will not be traced
@@ -142,7 +152,14 @@ impl Plugin for OctreeRayTracerPlugin {
             app.resources().get_mut::<Assets<Mesh>>().unwrap().set_untracked(RAY_PIPELINE_CUBE_HANDLE, mesh);
         };
         app
-            .add_asset::<Chunk>();
+            .add_asset::<Chunk>()
+            .add_resource(AmbientLight {
+                color: Color::rgb_linear(0.2, 0.2, 0.2)
+            })
+            .add_resource(SunLight {
+                color: Color::rgb_linear(0.8, 0.8, 0.8),
+                direction: Vec3::new(0.5, 0.5, 0.5).normalize()
+            });
 
         let resources = app.resources();
         let asset_server = resources.get_mut::<AssetServer>().unwrap();

@@ -1,3 +1,5 @@
+#![feature(array_map)]
+
 use crate::raytracer::{OctreeRayTracerPlugin};
 use bevy::render::draw::DrawContext;
 use bevy::render::mesh::Indices;
@@ -21,8 +23,10 @@ use svo::octree::Octree;
 use crate::raytracer::chunk::{Chunk, Voxel, ChunkBundle};
 use bevy::render::camera::PerspectiveProjection;
 use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, PrintDiagnosticsPlugin};
+use crate::lights::SunLight;
 
 mod raytracer;
+mod lights;
 
 /// This example illustrates how to load shaders such that they can be
 /// edited while the example is still running.
@@ -34,6 +38,7 @@ fn main() {
         .add_plugin(OctreeRayTracerPlugin::default())
         .add_plugin(PrintDiagnosticsPlugin::default())
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
+        .add_system(my_system.system())
         .run();
 }
 
@@ -47,23 +52,22 @@ fn setup(
     // Watch for changes
 
     let lod = 4;
-    let octree1: Octree<Voxel> = Octree::from_signed_distance_field(|l: glam::Vec3| {
-        0.4 - l.distance(Vec3::new(0.5, 0.5, 0.5))
-    }, Voxel(1), lod);
-    let chunk1 = Chunk::new(octree1, Vec4::new(16.0, 0.0, 0.0, 16.0));
 
-    let chunk_handle1 = chunks.add(chunk1);
+    let mut octree2: Octree<Voxel> = Octree::new();
+    let monument = dot_vox::load("assets/monu8-without-water.vox").unwrap();
+    let model = &monument.models[0];
 
-    let octree2: Octree<Voxel> = Octree::from_signed_distance_field(|l: glam::Vec3| {
-        let d = l - Vec3::new(0.5, 0.5, 0.5);
-        0.4 - d.x.abs().max(d.y.abs()).max(d.z.abs())
-    }, Voxel(1), lod);
+
+    for voxel in &model.voxels {
+        octree2.set(voxel.x as u32, voxel.z as u32, voxel.y as u32, 256, Voxel(voxel.i as u16));
+    }
+
+
+
     let chunk2 = Chunk::new(octree2, Vec4::new(0.0, 0.0, 0.0, 16.0));
 
     let chunk_handle2 = chunks.add(chunk2);
-
     commands
-        .spawn(ChunkBundle::new(chunk_handle1))
         .spawn(ChunkBundle::new(chunk_handle2))
         .spawn(Camera3dBundle {
             transform: Transform::from_translation(Vec3::new(0.0, 0.0, 10.0))
@@ -74,5 +78,14 @@ fn setup(
             },
             ..Default::default()
         })
-        .with(FlyCamera::default());;
+        .with(FlyCamera::default());
+}
+
+
+fn my_system(
+    mut sun_light_resource: ResMut<SunLight>,
+    time: Res<Time>
+) {
+    sun_light_resource.direction.x = (time.seconds_since_startup()).cos() as f32;
+    sun_light_resource.direction.z = (time.seconds_since_startup()).sin() as f32;
 }

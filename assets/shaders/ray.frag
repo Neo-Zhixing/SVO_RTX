@@ -28,7 +28,19 @@ layout(set = 1, binding = 0) uniform Camera3dProjection {
     mat4 transform;
     PerspectiveProjection projection;
 };
-layout(set = 2, binding = 0) readonly buffer Chunk {
+
+struct PointLight {
+    vec4 Color;
+    vec4 pos;
+};
+layout(set = 2, binding = 0) uniform Lights {
+    vec4 AmbientLightColor;
+    vec4 SunLightColor;
+    vec3 SunLightDir;
+    uint PointLightCount;
+    PointLight lights[];
+};
+layout(set = 3, binding = 0) readonly buffer Chunk {
     vec4 bounding_box;
     Node nodes[];
 };
@@ -107,36 +119,96 @@ uint material_at_position(inout vec4 box, vec3 position) {
     }
 }
 
+vec3 cubed_normalize(vec3 dir) {
+    vec3 dir_abs = abs(dir);
+    float max_element = max(dir_abs.x, max(dir_abs.y, dir_abs.z));
+    return -sign(dir) * step(max_element, dir_abs);
+}
 
-void main() {
-    Ray ray = generate_ray();
-    gl_FragDepth = 1.0; // inf far by default
 
-    vec4 box = bounding_box;
-    vec2 intersection = intersectAABB(ray.origin, ray.dir, box);
-    vec3 entry_point = ray.origin + intersection.x * ray.dir + sign(ray.dir) * box.w * 0.00001;
+uint RayMarch(vec4 initial_box, Ray ray, out vec3 hitpoint, out vec4 hitbox) {
+    hitbox = initial_box;
+    vec2 intersection = intersectAABB(ray.origin, ray.dir, hitbox);
+    vec3 entry_point = ray.origin + max(0, intersection.x) * ray.dir;
+    vec3 test_point = entry_point + sign(ray.dir) * hitbox.w * 0.0001;
     uint material_id = 0;
 
-    for(uint counter = 0; counter < 50 && containsAABB(entry_point, box); counter++) {
-        vec4 hitbox = box;
-        material_id = material_at_position(hitbox, entry_point);
+    for(uint counter = 0; counter < 100 && containsAABB(test_point, bounding_box); counter++) {
+        hitbox = initial_box;
+        material_id = material_at_position(hitbox, test_point);
         if (material_id > 0) {
             // get the depth info from entry_point
-            vec4 entry_point_camera_space = ViewProj * vec4(entry_point, 1.0);
+            vec4 entry_point_camera_space = ViewProj * vec4(test_point, 1.0);
             gl_FragDepth = ((entry_point_camera_space.z/entry_point_camera_space.w) + 1.0) * 0.5 ;
             break;
         }
         // calculate the next t_min
-        vec2 new_intersection = intersectAABB(entry_point, ray.dir, hitbox);
+        vec2 new_intersection = intersectAABB(test_point, ray.dir, hitbox);
 
-        entry_point += ray.dir * new_intersection.y + sign(ray.dir) * hitbox.w * 0.00001;
+        entry_point = test_point + ray.dir * new_intersection.y;
+        test_point = entry_point + sign(ray.dir) * hitbox.w * 0.0001;
+    }
+    hitpoint = entry_point;
+    return material_id;
+}
+
+// Return true if occluded
+bool RayMarchTest(vec4 initial_box, Ray ray) {
+    vec4 hitbox = initial_box;
+    vec2 intersection = intersectAABB(ray.origin, ray.dir, hitbox);
+    vec3 entry_point = ray.origin + max(0, intersection.x) * ray.dir;
+    vec3 test_point = entry_point + sign(ray.dir) * hitbox.w * 0.0001;
+    uint material_id = 0;
+
+    for(uint counter = 0; counter < 50 && containsAABB(test_point, bounding_box); counter++) {
+        hitbox = initial_box;
+        material_id = material_at_position(hitbox, test_point);
+        if (material_id > 0) {
+            // get the depth info from entry_point
+            return true;
+        }
+        // calculate the next t_min
+        vec2 new_intersection = intersectAABB(test_point, ray.dir, hitbox);
+
+        entry_point = test_point + ray.dir * new_intersection.y;
+        test_point = entry_point + sign(ray.dir) * hitbox.w * 0.0001;
+    }
+    return false;
+}
+void main() {
+    Ray ray = generate_ray();
+    gl_FragDepth = 1.0; // inf far by default
+
+    float depth;
+    vec3 hitpoint;
+    vec4 hitbox;
+    uint material_id = RayMarch(bounding_box, ray, hitpoint, hitbox);
+
+    vec4 output_color = palleet[material_id];
+
+    // Calculate normal
+    vec3 normal = cubed_normalize(hitpoint - (hitbox.xyz + hitbox.w/2));
+
+    // Calculate ambient
+    vec3 light_color = AmbientLightColor.rgb;
+
+    // Test Sunlight
+    Ray light_ray;
+    light_ray.dir = -SunLightDir;
+    light_ray.origin = hitpoint + sign(light_ray.dir) * hitbox.w * 0.01;
+    float sun_light_factor = max(0.0, dot(normal, SunLightDir));
+    if (sun_light_factor > 0.05) {
+        // so that the angle between the light and the surface is not too small
+        // when the angle is small, ray tracing it in the octree costs more
+        if (!RayMarchTest(bounding_box, light_ray)) {
+            // Not occluded
+            // Add Sunlight
+            light_color += sun_light_factor * SunLightColor.rgb;
+        }
     }
 
-    if (material_id == 0) {
-        f_color = vec4(0.0, 0.0, 0.0, 1.0);
-    } else if (material_id == 2) {
-        f_color = vec4(1.0, 0.0, 0.0, 1.0);
-    } else {
-        f_color = vec4(0.0, 1.0, 0.0, 1.0);
-    }
+
+    output_color.xyz *= light_color;
+    f_color = output_color;
+    return;
 }
