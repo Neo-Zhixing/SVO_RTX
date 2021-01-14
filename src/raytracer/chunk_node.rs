@@ -1,14 +1,16 @@
-use bevy::prelude::*;
-use std::borrow::Cow;
-use bevy::render::render_graph::{CommandQueue, ResourceSlots, SystemNode};
-use bevy::render::renderer::{RenderContext, BufferId, RenderResourceContext, BufferUsage, RenderResourceBinding, RenderResourceBindings, BufferInfo};
-use bevy::render::camera::{ActiveCameras, Camera, PerspectiveProjection};
-use bevy::core::AsBytes;
-use bevy::render::render_graph::Node;
-use svo::octree::Octree;
-use crate::Voxel;
 use crate::raytracer::chunk::{Chunk, ChunkState};
-
+use crate::Voxel;
+use bevy::core::AsBytes;
+use bevy::prelude::*;
+use bevy::render::camera::{ActiveCameras, Camera, PerspectiveProjection};
+use bevy::render::render_graph::Node;
+use bevy::render::render_graph::{CommandQueue, ResourceSlots, SystemNode};
+use bevy::render::renderer::{
+    BufferId, BufferInfo, BufferUsage, RenderContext, RenderResourceBinding,
+    RenderResourceBindings, RenderResourceContext,
+};
+use std::borrow::Cow;
+use svo::octree::Octree;
 
 #[derive(Debug)]
 pub struct ChunkNode {
@@ -74,26 +76,25 @@ pub fn chunk_node_system(
             let octree_buffer = render_resource_context.create_buffer(BufferInfo {
                 size: data_size,
                 buffer_usage: BufferUsage::STORAGE | BufferUsage::COPY_DST,
-                mapped_at_creation: false
+                mapped_at_creation: false,
             });
 
             let staging_buffer = render_resource_context.create_buffer(BufferInfo {
                 size: data_size,
                 buffer_usage: BufferUsage::MAP_WRITE | BufferUsage::COPY_SRC,
-                mapped_at_creation: true
+                mapped_at_creation: true,
             });
             render_pipelines.bindings.set(
                 "Chunk",
                 RenderResourceBinding::Buffer {
                     buffer: octree_buffer,
                     range: 0..data_size as u64,
-                    dynamic_index: None
-                }
+                    dynamic_index: None,
+                },
             );
 
             chunk_state.octree_buffer = Some(octree_buffer);
             chunk_state.staging_buffer = Some(staging_buffer);
-
 
             render_resource_context.write_mapped_buffer(
                 staging_buffer,
@@ -104,7 +105,6 @@ pub fn chunk_node_system(
                 },
             );
             render_resource_context.unmap_buffer(staging_buffer);
-
 
             state.command_queue.copy_buffer_to_buffer(
                 staging_buffer,

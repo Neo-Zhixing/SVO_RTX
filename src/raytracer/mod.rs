@@ -1,38 +1,43 @@
+use crate::lights::node::LightsNode;
+use crate::lights::{AmbientLight, SunLight};
+use crate::material::material_node::MaterialNode;
+use crate::material::texture_repo::TextureRepo;
+use crate::material::texture_repo_node::TextureRepoNode;
+use crate::material::{Material, MaterialPalette, DEFAULT_MATERIAL_PALETTE_HANDLE};
+use crate::raytracer::chunk::Chunk;
+use crate::raytracer::chunk_node::ChunkNode;
+use crate::raytracer::projection_node::CameraProjectionNode;
+use bevy::core::AsBytes;
+use bevy::prelude::shape::Cube;
 use bevy::prelude::*;
 use bevy::reflect::TypeUuid;
 use bevy::render::draw::{DrawContext, RenderCommand};
+use bevy::render::mesh::Indices;
 use bevy::render::pass::{
     LoadOp, Operations, PassDescriptor, RenderPassColorAttachmentDescriptor,
     RenderPassDepthStencilAttachmentDescriptor, TextureAttachment,
 };
-use bevy::render::pipeline::{BlendDescriptor, ColorStateDescriptor, ColorWrite, CompareFunction, DepthStencilStateDescriptor, IndexFormat, InputStepMode, PipelineDescriptor, PipelineSpecialization, PrimitiveTopology, RenderPipeline, StencilStateDescriptor, StencilStateFaceDescriptor, VertexAttributeDescriptor, VertexBufferDescriptor, VertexFormat, BlendFactor, BlendOperation, RasterizationStateDescriptor, FrontFace, CullMode};
+use bevy::render::pipeline::{
+    BlendDescriptor, BlendFactor, BlendOperation, ColorStateDescriptor, ColorWrite,
+    CompareFunction, CullMode, DepthStencilStateDescriptor, FrontFace, IndexFormat, InputStepMode,
+    PipelineDescriptor, PipelineSpecialization, PrimitiveTopology, RasterizationStateDescriptor,
+    RenderPipeline, StencilStateDescriptor, StencilStateFaceDescriptor, VertexAttributeDescriptor,
+    VertexBufferDescriptor, VertexFormat,
+};
 use bevy::render::render_graph::base as base_render_graph;
 use bevy::render::render_graph::{PassNode, RenderGraph, WindowSwapChainNode, WindowTextureNode};
 use bevy::render::renderer::{
-    BufferId, BufferInfo, BufferUsage, RenderResourceBindings,
-    RenderResourceContext,
+    BufferId, BufferInfo, BufferUsage, RenderResourceBindings, RenderResourceContext,
 };
 use bevy::render::shader::ShaderStages;
 use bevy::render::texture::{
     Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsage,
 };
 use bevy::window::WindowId;
-use crate::raytracer::projection_node::CameraProjectionNode;
-use crate::raytracer::chunk::Chunk;
-use crate::raytracer::chunk_node::ChunkNode;
-use bevy::prelude::shape::Cube;
-use bevy::core::AsBytes;
-use bevy::render::mesh::Indices;
-use crate::lights::node::LightsNode;
-use crate::lights::{AmbientLight, SunLight};
-use crate::material::texture_repo::TextureRepo;
-use crate::material::texture_repo_node::TextureRepoNode;
-use crate::material::material_node::MaterialNode;
-use crate::material::{Material, MaterialPalette, DEFAULT_MATERIAL_PALETTE_HANDLE};
 
-pub mod projection_node;
 pub mod chunk;
 pub mod chunk_node;
+pub mod projection_node;
 
 pub const RAY_PIPELINE_HANDLE: HandleUntyped =
     HandleUntyped::weak_from_u64(PipelineDescriptor::TYPE_UUID, 0x786f7ab62875ebbc);
@@ -88,8 +93,13 @@ impl Plugin for OctreeRayTracerPlugin {
             ray_pass_node.use_default_clear_color(0);
             ray_pass_node.add_camera(base_render_graph::camera::CAMERA_3D);
             render_graph.add_node(node::RAY_PASS, ray_pass_node);
-            render_graph.add_system_node(node::PROJECTION_NODE, CameraProjectionNode::new(base_render_graph::camera::CAMERA_3D));
-            render_graph.add_node_edge(node::PROJECTION_NODE, node::RAY_PASS).unwrap();
+            render_graph.add_system_node(
+                node::PROJECTION_NODE,
+                CameraProjectionNode::new(base_render_graph::camera::CAMERA_3D),
+            );
+            render_graph
+                .add_node_edge(node::PROJECTION_NODE, node::RAY_PASS)
+                .unwrap();
             render_graph
                 .add_node_edge(base_render_graph::node::TEXTURE_COPY, node::RAY_PASS)
                 .unwrap();
@@ -117,75 +127,73 @@ impl Plugin for OctreeRayTracerPlugin {
                 .unwrap();
 
             // Octree chunks
-            render_graph
-                .add_system_node(node::OCTREE_CHUNK_NODE, ChunkNode::new());
+            render_graph.add_system_node(node::OCTREE_CHUNK_NODE, ChunkNode::new());
             render_graph
                 .add_node_edge(node::OCTREE_CHUNK_NODE, node::RAY_PASS)
                 .unwrap();
 
-
             // Materials
             render_graph.add_system_node(node::MATERIAL_REPO, MaterialNode::new());
-            render_graph.add_node_edge(node::MATERIAL_REPO, node::RAY_PASS)
+            render_graph
+                .add_node_edge(node::MATERIAL_REPO, node::RAY_PASS)
                 .unwrap();
             // Textures
             render_graph.add_node(node::TEXTURE_REPO, TextureRepoNode::new());
             render_graph.add_node_edge(node::TEXTURE_REPO, node::RAY_PASS);
 
             // Adding lights
-            render_graph
-                .add_system_node(node::LIGHT_NODE, LightsNode::new(16));
+            render_graph.add_system_node(node::LIGHT_NODE, LightsNode::new(16));
             render_graph
                 .add_node_edge(node::LIGHT_NODE, node::RAY_PASS)
                 .unwrap();
 
             // ensure ray pass runs after main pass
             // So that pixels covered by UI / Mesh rendered objects will not be traced
-            render_graph.add_node_edge(base_render_graph::node::MAIN_PASS, node::RAY_PASS).unwrap();
+            render_graph
+                .add_node_edge(base_render_graph::node::MAIN_PASS, node::RAY_PASS)
+                .unwrap();
         }
 
         {
             let mut mesh = Mesh::new(PrimitiveTopology::TriangleStrip);
             mesh.set_indices(Some(Indices::U16(vec![
-                3, 7, 1, 5,
-                4, 7, 6, 3,
-                2, 1, 0, 4,
-                2, 6
-            ]
-            )));
-            mesh.set_attribute(Mesh::ATTRIBUTE_POSITION, vec![
-                [0.0, 0.0, 0.0], // 0
-                [0.0, 0.0, 1.0], // 1
-                [0.0,1.0, 0.0], // 2
-                [0.0,1.0, 1.0], // 3
-                [1.0, 0.0, 0.0], // 4
-                [1.0, 0.0, 1.0], // 5
-                [1.0, 1.0, 0.0], // 6
-                [1.0, 1.0, 1.0] // 7
-            ]);
+                3, 7, 1, 5, 4, 7, 6, 3, 2, 1, 0, 4, 2, 6,
+            ])));
+            mesh.set_attribute(
+                Mesh::ATTRIBUTE_POSITION,
+                vec![
+                    [0.0, 0.0, 0.0], // 0
+                    [0.0, 0.0, 1.0], // 1
+                    [0.0, 1.0, 0.0], // 2
+                    [0.0, 1.0, 1.0], // 3
+                    [1.0, 0.0, 0.0], // 4
+                    [1.0, 0.0, 1.0], // 5
+                    [1.0, 1.0, 0.0], // 6
+                    [1.0, 1.0, 1.0], // 7
+                ],
+            );
             // Adding the quad mesh
-            app.resources().get_mut::<Assets<Mesh>>().unwrap().set_untracked(RAY_PIPELINE_CUBE_HANDLE, mesh);
+            app.resources()
+                .get_mut::<Assets<Mesh>>()
+                .unwrap()
+                .set_untracked(RAY_PIPELINE_CUBE_HANDLE, mesh);
         };
-        app
-            .add_asset::<Chunk>()
+        app.add_asset::<Chunk>()
             .add_asset::<Material>()
             .add_asset::<MaterialPalette>()
             .add_resource(AmbientLight {
-                color: Color::rgb_linear(0.2, 0.2, 0.2)
+                color: Color::rgb_linear(0.2, 0.2, 0.2),
             })
             .add_resource(TextureRepo::new(1024, 1024))
             .add_resource(SunLight {
                 color: Color::rgb_linear(0.8, 0.8, 0.8),
-                direction: Vec3::new(0.5, 0.5, 0.5).normalize()
+                direction: Vec3::new(0.5, 0.5, 0.5).normalize(),
             });
 
         let resources = app.resources();
         {
             let mut palettes = resources.get_mut::<Assets<MaterialPalette>>().unwrap();
-            palettes.set_untracked(
-                DEFAULT_MATERIAL_PALETTE_HANDLE,
-                MaterialPalette::new()
-            )
+            palettes.set_untracked(DEFAULT_MATERIAL_PALETTE_HANDLE, MaterialPalette::new())
         }
         let asset_server = resources.get_mut::<AssetServer>().unwrap();
 
@@ -207,7 +215,7 @@ impl Plugin for OctreeRayTracerPlugin {
                     depth_bias: 0,
                     depth_bias_slope_scale: 0.0,
                     depth_bias_clamp: 0.0,
-                    clamp_depth: false
+                    clamp_depth: false,
                 }),
                 depth_stencil_state: Some(DepthStencilStateDescriptor {
                     format: TextureFormat::Depth32Float,

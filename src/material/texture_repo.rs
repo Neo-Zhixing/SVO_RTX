@@ -1,14 +1,16 @@
-use bevy::asset::{AssetPath, AssetLoader, AssetServer};
-use bevy::render::texture::{Texture, ImageTextureLoader, TextureDescriptor, Extent3d, TextureDimension, TextureUsage};
-use std::path::Path;
+use bevy::asset::{AssetLoader, AssetPath, AssetServer};
+use bevy::render::texture::{
+    Extent3d, ImageTextureLoader, Texture, TextureDescriptor, TextureDimension, TextureUsage,
+};
 use image::{DynamicImage, GenericImageView};
 use std::collections::hash_map;
+use std::path::Path;
 
 pub struct TextureRepo {
     width: u32,
     height: u32,
     pub(crate) textures: hash_map::HashMap<TextureRepoHandle, DynamicImage>,
-    pub(crate) length: u16
+    pub(crate) length: u16,
 }
 
 #[derive(Copy, Clone, Eq, Hash, PartialEq)]
@@ -20,7 +22,7 @@ impl TextureRepo {
             width,
             height,
             textures: hash_map::HashMap::new(),
-            length: 0
+            length: 0,
         }
     }
     pub fn load<'a, P: AsRef<Path>>(&mut self, path: P) -> TextureRepoHandle {
@@ -42,7 +44,7 @@ impl TextureRepo {
         Extent3d {
             width: self.width,
             height: self.height,
-            depth: self.length as u32
+            depth: self.length as u32,
         }
     }
 }

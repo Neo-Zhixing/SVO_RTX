@@ -1,17 +1,22 @@
-use bevy::prelude::*;
-use std::borrow::Cow;
-use bevy::render::render_graph::{CommandQueue, ResourceSlots, SystemNode};
-use bevy::render::renderer::{RenderContext, BufferId, RenderResourceContext, BufferUsage, RenderResourceBinding, RenderResourceBindings, BufferInfo, TextureId, SamplerId};
-use bevy::render::camera::{ActiveCameras, Camera, PerspectiveProjection};
-use bevy::core::AsBytes;
-use bevy::render::render_graph::Node;
-use svo::octree::Octree;
-use crate::Voxel;
-use crate::raytracer::chunk::{Chunk, ChunkState};
 use crate::material::texture_repo::TextureRepo;
-use bevy::render::texture::{TextureDescriptor, Extent3d, TextureDimension, TextureUsage, SamplerDescriptor, AddressMode, FilterMode};
+use crate::raytracer::chunk::{Chunk, ChunkState};
+use crate::Voxel;
+use bevy::core::AsBytes;
+use bevy::prelude::*;
+use bevy::render::camera::{ActiveCameras, Camera, PerspectiveProjection};
+use bevy::render::render_graph::Node;
+use bevy::render::render_graph::{CommandQueue, ResourceSlots, SystemNode};
+use bevy::render::renderer::{
+    BufferId, BufferInfo, BufferUsage, RenderContext, RenderResourceBinding,
+    RenderResourceBindings, RenderResourceContext, SamplerId, TextureId,
+};
+use bevy::render::texture::{
+    AddressMode, Extent3d, FilterMode, SamplerDescriptor, TextureDescriptor, TextureDimension,
+    TextureUsage,
+};
 use bevy::wgpu::renderer::WgpuRenderContext;
-
+use std::borrow::Cow;
+use svo::octree::Octree;
 
 #[derive(Debug)]
 pub struct TextureRepoNode {
@@ -30,8 +35,8 @@ impl TextureRepoNode {
             size: Extent3d {
                 width: 0,
                 height: 0,
-                depth: 0
-            }
+                depth: 0,
+            },
         }
     }
 }
@@ -58,14 +63,16 @@ impl Node for TextureRepoNode {
             // Texture size increased, needs to create a larger texture now.
             let new_size = repo.get_extent();
             println!("Created new 3d texture");
-            let new_texture = render_context.resources().create_texture(TextureDescriptor {
-                size: new_size,
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: TextureDimension::D2,
-                format: Default::default(),
-                usage: TextureUsage::COPY_DST | TextureUsage::SAMPLED
-            });
+            let new_texture = render_context
+                .resources()
+                .create_texture(TextureDescriptor {
+                    size: new_size,
+                    mip_level_count: 1,
+                    sample_count: 1,
+                    dimension: TextureDimension::D2,
+                    format: Default::default(),
+                    usage: TextureUsage::COPY_DST | TextureUsage::SAMPLED,
+                });
             if let Some(old_texture) = self.texture {
                 render_context.copy_texture_to_texture(
                     old_texture,
@@ -82,12 +89,10 @@ impl Node for TextureRepoNode {
             self.texture = Some(new_texture);
             self.size = new_size;
 
-
-            let mut render_resource_bindings = resources.get_mut::<RenderResourceBindings>().unwrap();
-            render_resource_bindings.set(
-                "TextureRepo",
-                RenderResourceBinding::Texture(new_texture),
-            );
+            let mut render_resource_bindings =
+                resources.get_mut::<RenderResourceBindings>().unwrap();
+            render_resource_bindings
+                .set("TextureRepo", RenderResourceBinding::Texture(new_texture));
         }
         if self.sampler.is_none() {
             let sampler = render_context
@@ -102,27 +107,27 @@ impl Node for TextureRepoNode {
                     lod_min_clamp: 0.0,
                     lod_max_clamp: std::f32::MAX,
                     compare_function: None,
-                    anisotropy_clamp: None
+                    anisotropy_clamp: None,
                 });
-            let mut render_resource_bindings = resources.get_mut::<RenderResourceBindings>().unwrap();
+            let mut render_resource_bindings =
+                resources.get_mut::<RenderResourceBindings>().unwrap();
             render_resource_bindings.set(
                 "TextureRepoSampler",
-                RenderResourceBinding::Sampler(sampler)
+                RenderResourceBinding::Sampler(sampler),
             );
             self.sampler = Some(sampler);
         }
         // Copy new textures
-        let image_size: usize = self.size.width as usize * self.size.height as usize * std::mem::size_of::<u32>();
+        let image_size: usize =
+            self.size.width as usize * self.size.height as usize * std::mem::size_of::<u32>();
         for (handle, image) in repo.textures.drain() {
             println!("Copied texture");
             let image = image.into_bgra8();
-            let staging_buffer = render_context
-                .resources()
-                .create_buffer(BufferInfo {
-                    size: image_size,
-                    buffer_usage: BufferUsage::MAP_WRITE | BufferUsage::COPY_SRC,
-                    mapped_at_creation: true
-                });
+            let staging_buffer = render_context.resources().create_buffer(BufferInfo {
+                size: image_size,
+                buffer_usage: BufferUsage::MAP_WRITE | BufferUsage::COPY_SRC,
+                mapped_at_creation: true,
+            });
             render_context.resources().write_mapped_buffer(
                 staging_buffer,
                 0..(image_size as u64),
@@ -140,8 +145,8 @@ impl Node for TextureRepoNode {
                 Extent3d {
                     width: self.size.width,
                     height: self.size.height,
-                    depth: 1
-                }
+                    depth: 1,
+                },
             );
             render_context.resources().unmap_buffer(staging_buffer);
             render_context.resources().remove_buffer(staging_buffer);

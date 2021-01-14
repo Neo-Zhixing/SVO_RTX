@@ -1,8 +1,11 @@
+use crate::lights::{AmbientLight, PointLight, SunLight};
+use bevy::core::{AsBytes, Byteable};
 use bevy::prelude::*;
-use bevy::render::render_graph::{CommandQueue, ResourceSlots, SystemNode, Node};
-use bevy::render::renderer::{RenderContext, BufferId, RenderResourceContext, BufferInfo, BufferUsage, RenderResourceBindings, RenderResourceBinding};
-use crate::lights::{AmbientLight, SunLight, PointLight};
-use bevy::core::{Byteable, AsBytes};
+use bevy::render::render_graph::{CommandQueue, Node, ResourceSlots, SystemNode};
+use bevy::render::renderer::{
+    BufferId, BufferInfo, BufferUsage, RenderContext, RenderResourceBinding,
+    RenderResourceBindings, RenderResourceContext,
+};
 
 const LIGHTS: &str = "Lights";
 /// A Render Graph [Node] that write light data from the ECS to GPU buffers
@@ -33,7 +36,6 @@ impl Node for LightsNode {
         self.command_queue.execute(render_context);
     }
 }
-
 
 impl SystemNode for LightsNode {
     fn get_system(&self, commands: &mut Commands) -> Box<dyn System<In = (), Out = ()>> {
@@ -72,10 +74,13 @@ pub fn lights_node_system(
     let state = &mut state;
     let render_resource_context = &**render_resource_context;
 
-
     let point_light_count = query.iter().count() as u32;
-    let current_light_uniform_size = std::mem::size_of::<[f32; 11]>() + std::mem::size_of::<u32>() + std::mem::size_of::<PointLight>() * point_light_count as usize;
-    let max_light_uniform_size = std::mem::size_of::<[f32; 11]>() + std::mem::size_of::<u32>() + std::mem::size_of::<PointLight>() * state.max_lights;
+    let current_light_uniform_size = std::mem::size_of::<[f32; 11]>()
+        + std::mem::size_of::<u32>()
+        + std::mem::size_of::<PointLight>() * point_light_count as usize;
+    let max_light_uniform_size = std::mem::size_of::<[f32; 11]>()
+        + std::mem::size_of::<u32>()
+        + std::mem::size_of::<PointLight>() * state.max_lights;
 
     if let Some(staging_buffer) = state.staging_buffer {
         render_resource_context.map_buffer(staging_buffer);
@@ -117,7 +122,8 @@ pub fn lights_node_system(
                 ambient_light_resource.color.b_linear(),
                 ambient_light_resource.color.a(),
             ];
-            data[current_size_head..current_size_tail].copy_from_slice(ambient_light_data.as_bytes());
+            data[current_size_head..current_size_tail]
+                .copy_from_slice(ambient_light_data.as_bytes());
 
             // sun_light
             let sun_light_color_data: [f32; 4] = [
@@ -132,7 +138,6 @@ pub fn lights_node_system(
             data[current_size_head..current_size_tail]
                 .copy_from_slice(sun_light_color_data.as_bytes());
 
-
             let sun_light_dir_data: [f32; 3] = sun_light_resource.direction.into();
             let size = std::mem::size_of::<[f32; 3]>();
             current_size_head = current_size_tail;
@@ -146,12 +151,11 @@ pub fn lights_node_system(
             data[current_size_head..current_size_tail]
                 .copy_from_slice(point_light_count.as_bytes());
 
-
             // light array
-            for ((light, global_transform), slot) in query
-                .iter()
-                .zip(data[current_size_tail..current_light_uniform_size].chunks_exact_mut(std::mem::size_of::<[f32; 8]>()))
-            {
+            for ((light, global_transform), slot) in query.iter().zip(
+                data[current_size_tail..current_light_uniform_size]
+                    .chunks_exact_mut(std::mem::size_of::<[f32; 8]>()),
+            ) {
                 let color: [f32; 4] = [
                     light.color.r_linear(),
                     light.color.g_linear(),

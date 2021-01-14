@@ -1,11 +1,13 @@
-use bevy::prelude::*;
-use std::borrow::Cow;
-use bevy::render::render_graph::{CommandQueue, ResourceSlots, SystemNode};
-use bevy::render::renderer::{RenderContext, BufferId, RenderResourceContext, BufferUsage, RenderResourceBinding, RenderResourceBindings, BufferInfo};
-use bevy::render::camera::{ActiveCameras, Camera, PerspectiveProjection};
 use bevy::core::AsBytes;
+use bevy::prelude::*;
+use bevy::render::camera::{ActiveCameras, Camera, PerspectiveProjection};
 use bevy::render::render_graph::Node;
-
+use bevy::render::render_graph::{CommandQueue, ResourceSlots, SystemNode};
+use bevy::render::renderer::{
+    BufferId, BufferInfo, BufferUsage, RenderContext, RenderResourceBinding,
+    RenderResourceBindings, RenderResourceContext,
+};
+use std::borrow::Cow;
 
 #[derive(Debug)]
 pub struct CameraProjectionNode {
@@ -15,8 +17,8 @@ pub struct CameraProjectionNode {
 
 impl CameraProjectionNode {
     pub fn new<T>(camera_name: T) -> Self
-        where
-            T: Into<Cow<'static, str>>,
+    where
+        T: Into<Cow<'static, str>>,
     {
         CameraProjectionNode {
             command_queue: Default::default(),
@@ -74,11 +76,12 @@ pub fn projection_node_system(
 ) {
     let render_resource_context = &**render_resource_context;
 
-    let (global_transform, perspective_projection, camera) = if let Some(entity) = active_cameras.get(&state.camera_name) {
-        query.get(entity).unwrap()
-    } else {
-        return;
-    };
+    let (global_transform, perspective_projection, camera) =
+        if let Some(entity) = active_cameras.get(&state.camera_name) {
+            query.get(entity).unwrap()
+        } else {
+            return;
+        };
 
     let window = windows.get(camera.window).unwrap();
 
@@ -120,7 +123,7 @@ pub fn projection_node_system(
         perspective_projection.near,
         perspective_projection.far,
         window.physical_width() as f32,
-        window.physical_height() as f32
+        window.physical_height() as f32,
     ];
     let transform_data: [f32; 16] = global_transform.compute_matrix().to_cols_array();
 

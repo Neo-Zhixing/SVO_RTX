@@ -1,36 +1,31 @@
-#![feature(array_map)]
-#![feature(const_in_array_repeat_expressions)]
-use crate::raytracer::{OctreeRayTracerPlugin};
+use bevy::asset::HandleId;
+use bevy::diagnostic::{DiagnosticsPlugin, FrameTimeDiagnosticsPlugin};
+use bevy::render::camera::PerspectiveProjection;
 use bevy::render::draw::DrawContext;
 use bevy::render::mesh::Indices;
-use bevy::render::pipeline::{
-    BlendDescriptor, ColorStateDescriptor, ColorWrite, IndexFormat, PrimitiveTopology,
-};
-use bevy::render::texture::TextureFormat;
 use bevy::{
     prelude::*,
     reflect::TypeUuid,
     render::{
+        exture::TextureFormat,
         mesh::shape,
-        pipeline::{PipelineDescriptor, RenderPipeline},
+        pipeline::{
+            BlendDescriptor, ColorStateDescriptor, ColorWrite, IndexFormat, PipelineDescriptor,
+            PrimitiveTopology, RenderPipeline,
+        },
         render_graph::{base, AssetRenderResourcesNode, RenderGraph},
         renderer::RenderResources,
         shader::ShaderStages,
     },
 };
 use bevy_fly_camera::{FlyCamera, FlyCameraPlugin};
+use ray_tracing::lights::SunLight;
+use ray_tracing::material::texture_repo::TextureRepo;
+use ray_tracing::material::{Material, MaterialPalette, DEFAULT_MATERIAL_PALETTE_HANDLE};
+use ray_tracing::raytracer::chunk::{Chunk, ChunkBundle};
+use ray_tracing::OctreeRayTracerPlugin;
+use ray_tracing::Voxel;
 use svo::octree::Octree;
-use crate::raytracer::chunk::{Chunk, Voxel, ChunkBundle};
-use bevy::render::camera::PerspectiveProjection;
-use bevy::diagnostic::{FrameTimeDiagnosticsPlugin, DiagnosticsPlugin};
-use crate::lights::SunLight;
-use bevy::asset::HandleId;
-use crate::material::texture_repo::TextureRepo;
-use crate::material::{MaterialPalette, DEFAULT_MATERIAL_PALETTE_HANDLE, Material};
-
-mod raytracer;
-mod lights;
-mod material;
 
 /// This example illustrates how to load shaders such that they can be
 /// edited while the example is still running.
@@ -65,7 +60,7 @@ fn setup(
     mut render_graph: ResMut<RenderGraph>,
     mut texture_repo: ResMut<TextureRepo>,
     mut material_palettes: ResMut<Assets<MaterialPalette>>,
-    mut materials: ResMut<Assets<Material>>
+    mut materials: ResMut<Assets<Material>>,
 ) {
     let grass_material = materials.add(Material {
         name: "Grass".into(),
@@ -76,10 +71,11 @@ fn setup(
         diffuse: texture_repo.load("assets/textures/rock.jpg"),
     });
 
-    let mut palette = material_palettes.get_mut(DEFAULT_MATERIAL_PALETTE_HANDLE).unwrap();
+    let mut palette = material_palettes
+        .get_mut(DEFAULT_MATERIAL_PALETTE_HANDLE)
+        .unwrap();
     let grass_voxel = palette.add_material(grass_material);
     let rock_voxel = palette.add_material(rock_material);
-
 
     let lod = 4;
 
@@ -90,20 +86,20 @@ fn setup(
     for (i, color) in monument.palette.iter().enumerate() {
         let r = color >> 24;
         let g = (color >> 16) & 0xFF;
-        let b = (color >> 8 ) & 0xFF;
+        let b = (color >> 8) & 0xFF;
         let a = color & 0xFF;
         palette.color_palette[i] = Color::rgba_u8(r as u8, g as u8, b as u8, a as u8);
     }
     println!("Added material");
 
-
-
     for voxel in &model.voxels {
-        let v = if voxel.i == 58 { grass_voxel } else { rock_voxel };
+        let v = if voxel.i == 58 {
+            grass_voxel
+        } else {
+            rock_voxel
+        };
         octree2.set(voxel.x as u32, voxel.z as u32, voxel.y as u32, 256, v);
     }
-
-
 
     let chunk2 = Chunk::new(octree2, Vec4::new(0.0, 0.0, 0.0, 16.0));
 
@@ -122,11 +118,7 @@ fn setup(
         .with(FlyCamera::default());
 }
 
-
-fn my_system(
-    mut sun_light_resource: ResMut<SunLight>,
-    time: Res<Time>
-) {
+fn my_system(mut sun_light_resource: ResMut<SunLight>, time: Res<Time>) {
     sun_light_resource.direction.x = (time.seconds_since_startup()).cos() as f32;
     sun_light_resource.direction.z = (time.seconds_since_startup()).sin() as f32;
 }

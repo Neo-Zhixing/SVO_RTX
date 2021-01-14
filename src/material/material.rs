@@ -1,11 +1,11 @@
-use std::borrow::Cow;
 use crate::material::texture_repo::TextureRepoHandle;
-use std::collections::HashMap;
 use crate::Voxel;
 use bevy::asset::{Handle, HandleUntyped};
-use bevy::render::color::Color;
 use bevy::reflect::TypeUuid;
-use bevy::render::renderer::{BufferInfo, BufferId};
+use bevy::render::color::Color;
+use bevy::render::renderer::{BufferId, BufferInfo};
+use std::borrow::Cow;
+use std::collections::HashMap;
 
 pub const DEFAULT_MATERIAL_PALETTE_HANDLE: HandleUntyped =
     HandleUntyped::weak_from_u64(MaterialPalette::TYPE_UUID, 0x786f4ab62875ebbd);
@@ -41,7 +41,7 @@ impl MaterialPalette {
             colored_materials: [None; 256],
             materials: vec![],
             buffer: None,
-            staging_buffer: None
+            staging_buffer: None,
         }
     }
     pub fn add_material(&mut self, material: Handle<Material>) -> Voxel {
