@@ -24,7 +24,7 @@ struct Node {
 layout(set = 0, binding = 0) uniform Camera {
     mat4 ViewProj;
 };
-layout(set = 1, binding = 0) uniform Camera3dProjection {
+layout(set = 3, binding = 0) uniform Camera3dProjection {
     mat4 transform;
     PerspectiveProjection projection;
 };
@@ -33,18 +33,24 @@ struct PointLight {
     vec4 Color;
     vec4 pos;
 };
-layout(set = 2, binding = 0) uniform Lights {
+layout(set = 1, binding = 0) uniform Lights {
     vec4 AmbientLightColor;
     vec4 SunLightColor;
     vec3 SunLightDir;
     uint PointLightCount;
     PointLight lights[];
 };
-layout(set = 3, binding = 0) readonly buffer Chunk {
+layout(set = 2, binding = 0) readonly buffer Chunk {
     vec4 bounding_box;
     Node nodes[];
 };
-
+layout(set = 3, binding = 1) uniform texture2DArray TextureRepo;
+layout(set = 3, binding = 2) uniform sampler TextureRepoSampler;
+layout(set = 3, binding = 3) readonly buffer Materials {
+    vec4 ColorPalettes[256];
+    uint16_t ColoredMaterials[256];
+    uint16_t RegularMaterials[];
+};
 struct Ray {
     vec3 origin;
     vec3 dir;
@@ -183,11 +189,21 @@ void main() {
     vec3 hitpoint;
     vec4 hitbox;
     uint material_id = RayMarch(bounding_box, ray, hitpoint, hitbox);
-
-    vec4 output_color = palleet[material_id];
+    uint texture_id = uint(RegularMaterials[material_id-1]);
 
     // Calculate normal
     vec3 normal = cubed_normalize(hitpoint - (hitbox.xyz + hitbox.w/2));
+    vec2 texcoords = vec2(
+        dot(vec3(hitpoint.z, hitpoint.x, -hitpoint.x), normal),
+        dot(-sign(normal) * vec3(hitpoint.y, hitpoint.z, hitpoint.y), normal)
+    );
+
+    //vec4 output_color = palleet[material_id];
+    vec4 output_color = texture(
+        sampler2DArray(TextureRepo,  TextureRepoSampler),
+        vec3(texcoords, texture_id)
+    );
+
 
     // Calculate ambient
     vec3 light_color = AmbientLightColor.rgb;

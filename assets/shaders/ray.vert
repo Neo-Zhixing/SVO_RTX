@@ -18,7 +18,7 @@ layout(set = 0, binding = 0) uniform Camera {
     mat4 ViewProj;
 };
 
-layout(set = 3, binding = 0) readonly buffer Chunk {
+layout(set = 2, binding = 0) readonly buffer Chunk {
     vec4 bounding_box;
     Node nodes[];
 };

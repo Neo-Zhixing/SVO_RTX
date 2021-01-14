@@ -25,6 +25,10 @@ use bevy::core::AsBytes;
 use bevy::render::mesh::Indices;
 use crate::lights::node::LightsNode;
 use crate::lights::{AmbientLight, SunLight};
+use crate::material::texture_repo::TextureRepo;
+use crate::material::texture_repo_node::TextureRepoNode;
+use crate::material::material_node::MaterialNode;
+use crate::material::{Material, MaterialPalette, DEFAULT_MATERIAL_PALETTE_HANDLE};
 
 pub mod projection_node;
 pub mod chunk;
@@ -52,6 +56,8 @@ pub mod node {
     pub const PROJECTION_NODE: &str = "ray_projection_node";
     pub const OCTREE_CHUNK_NODE: &str = "octree_chunk_node";
     pub const LIGHT_NODE: &str = "light_node";
+    pub const TEXTURE_REPO: &str = "texture_repo_node";
+    pub const MATERIAL_REPO: &str = "material_repo_node";
 }
 
 impl Plugin for OctreeRayTracerPlugin {
@@ -117,6 +123,15 @@ impl Plugin for OctreeRayTracerPlugin {
                 .add_node_edge(node::OCTREE_CHUNK_NODE, node::RAY_PASS)
                 .unwrap();
 
+
+            // Materials
+            render_graph.add_system_node(node::MATERIAL_REPO, MaterialNode::new());
+            render_graph.add_node_edge(node::MATERIAL_REPO, node::RAY_PASS)
+                .unwrap();
+            // Textures
+            render_graph.add_node(node::TEXTURE_REPO, TextureRepoNode::new());
+            render_graph.add_node_edge(node::TEXTURE_REPO, node::RAY_PASS);
+
             // Adding lights
             render_graph
                 .add_system_node(node::LIGHT_NODE, LightsNode::new(16));
@@ -153,15 +168,25 @@ impl Plugin for OctreeRayTracerPlugin {
         };
         app
             .add_asset::<Chunk>()
+            .add_asset::<Material>()
+            .add_asset::<MaterialPalette>()
             .add_resource(AmbientLight {
                 color: Color::rgb_linear(0.2, 0.2, 0.2)
             })
+            .add_resource(TextureRepo::new(1024, 1024))
             .add_resource(SunLight {
                 color: Color::rgb_linear(0.8, 0.8, 0.8),
                 direction: Vec3::new(0.5, 0.5, 0.5).normalize()
             });
 
         let resources = app.resources();
+        {
+            let mut palettes = resources.get_mut::<Assets<MaterialPalette>>().unwrap();
+            palettes.set_untracked(
+                DEFAULT_MATERIAL_PALETTE_HANDLE,
+                MaterialPalette::new()
+            )
+        }
         let asset_server = resources.get_mut::<AssetServer>().unwrap();
 
         asset_server.watch_for_changes().unwrap();

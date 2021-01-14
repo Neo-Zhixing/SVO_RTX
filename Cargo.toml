@@ -8,6 +8,28 @@ edition = "2018"
 
 [dependencies]
 glam = "*"
-bevy = "0.4"
 bevy_fly_camera = "0.6"
 svo = { path = "../svo" }
+dot_vox = "4.1.0"
+image = "0.23.12"
+
+[dependencies.bevy]
+version = "0.4"
+features = [
+    "bevy_audio",
+    "bevy_dynamic_plugin",
+    "bevy_gilrs",
+    "bevy_gltf",
+    "bevy_wgpu",
+    "bevy_winit",
+    "render",
+    "png",
+    "jpeg",
+    #"hdr",
+    #"mp3",
+    "x11",
+]
+
+
+[patch.crates-io]
+bevy = { path = "../bevy" }

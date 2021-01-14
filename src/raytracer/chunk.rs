@@ -8,9 +8,41 @@ use crate::raytracer::{RayPass, RAY_PIPELINE_HANDLE, RAY_PIPELINE_CUBE_HANDLE};
 use bevy::prelude::*;
 use bevy::render::pipeline::{RenderPipeline, PipelineSpecialization, IndexFormat, PrimitiveTopology, VertexBufferDescriptor, InputStepMode, VertexAttributeDescriptor, VertexFormat};
 use bevy::render::renderer::BufferId;
+use crate::material::MaterialPalette;
+use crate::material::DEFAULT_MATERIAL_PALETTE_HANDLE;
 
 #[derive(Copy, Clone, Default, Eq, PartialEq, PartialOrd, Ord)]
-pub struct Voxel(pub u16);
+pub struct Voxel(u16);
+
+// 0:  Air
+// 0x01 - 0x80: 2^15 - 1 = 32767 standarlone blocks
+// 0x80 - 0xFF:
+
+
+pub enum VoxelData {
+    Regular(u16),
+    Colored(u8, u8)
+}
+impl Voxel {
+    pub fn new_colored(id: u8, color: u8) -> Self {
+        assert_eq!(id & 0x80, 0, "Colored voxel has index 0 - 127");
+        let id = id | 0x80;
+        Voxel(((id as u16) << 8) | (color as u16))
+    }
+    pub fn new(id: u16) -> Self {
+        assert_eq!(id & 0x8000, 0, "Colored voxel has index 0 - 0x8f");
+        Voxel(id)
+    }
+    pub fn get(&self) -> VoxelData {
+        if self.0 & 0x80 == 0 {
+            VoxelData::Regular(self.0)
+        } else {
+            let voxel_id = (self.0 >> 8) as u8 & 0x7f;
+            let color = (self.0 & 0xff) as u8;
+            VoxelData::Colored(voxel_id, color)
+        }
+    }
+}
 
 impl svo::Voxel for Voxel {
     fn avg(arr: &[Self; 8]) -> Self {
@@ -73,6 +105,7 @@ pub struct ChunkBundle {
     pub render_pipelines: RenderPipelines,
     pub mesh: Handle<Mesh>,
     pub state: ChunkState,
+    pub palette: Handle<MaterialPalette>
 }
 
 impl ChunkBundle {
@@ -90,7 +123,8 @@ impl ChunkBundle {
             state: ChunkState {
                 octree_buffer: None,
                 staging_buffer: None,
-            }
+            },
+            palette: DEFAULT_MATERIAL_PALETTE_HANDLE.typed()
         }
     }
 }
