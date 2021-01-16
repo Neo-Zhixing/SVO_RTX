@@ -10,7 +10,6 @@ use bevy::render::renderer::{
     RenderResourceBindings, RenderResourceContext,
 };
 use std::borrow::Cow;
-use svo::octree::Octree;
 
 #[derive(Debug)]
 pub struct ChunkNode {
@@ -60,14 +59,12 @@ pub fn chunk_node_system(
     mut state: Local<ChunkNodeState>,
     render_resource_context: Res<Box<dyn RenderResourceContext>>,
     chunks: Res<Assets<Chunk>>,
-    mut render_resource_bindings: ResMut<RenderResourceBindings>,
     mut query: Query<(&Handle<Chunk>, &mut ChunkState, &mut RenderPipelines)>,
 ) {
     let render_resource_context = &**render_resource_context;
 
     for (chunk_handle, mut chunk_state, mut render_pipelines) in query.iter_mut() {
-        if let Some(staging_buffer) = chunk_state.staging_buffer {
-        } else {
+        if chunk_state.staging_buffer.is_none() {
             let chunk = chunks.get(chunk_handle).unwrap();
             let octree = &chunk.octree;
             let bbox_size = std::mem::size_of::<Vec4>();

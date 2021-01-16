@@ -8,7 +8,7 @@ use bevy::render::render_graph::Node;
 use bevy::render::render_graph::{CommandQueue, ResourceSlots, SystemNode};
 use bevy::render::renderer::{
     BufferId, BufferInfo, BufferUsage, RenderContext, RenderResourceBinding,
-    RenderResourceBindings, RenderResourceContext, SamplerId, TextureId,
+    RenderResourceBindings, SamplerId, TextureId,
 };
 use bevy::render::texture::{
     AddressMode, Extent3d, FilterMode, SamplerDescriptor, TextureDescriptor, TextureDimension,
@@ -50,7 +50,7 @@ impl Node for TextureRepoNode {
         _input: &ResourceSlots,
         _output: &mut ResourceSlots,
     ) {
-        let mut repo = resources.get_mut::<TextureRepo>();
+        let repo = resources.get_mut::<TextureRepo>();
         if repo.is_none() {
             return;
         }

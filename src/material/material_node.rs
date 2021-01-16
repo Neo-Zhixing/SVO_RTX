@@ -30,7 +30,7 @@ impl MaterialNode {
 impl Node for MaterialNode {
     fn update(
         &mut self,
-        world: &World,
+        _world: &World,
         _resources: &Resources,
         render_context: &mut dyn RenderContext,
         _input: &ResourceSlots,
@@ -63,7 +63,6 @@ pub fn material_node_system(
     render_resource_context: Res<Box<dyn RenderResourceContext>>,
     mut palettes: ResMut<Assets<MaterialPalette>>,
     materials: Res<Assets<Material>>,
-    mut render_resource_bindings: ResMut<RenderResourceBindings>,
     mut query: Query<(&Handle<MaterialPalette>, &mut RenderPipelines)>,
 ) {
     let render_resource_context = &**render_resource_context;
@@ -73,21 +72,21 @@ pub fn material_node_system(
         if let Some(staging_buffer) = palette.staging_buffer {
             render_resource_context.remove_buffer(staging_buffer);
             palette.staging_buffer = None;
-            println!("Cleared staging buffer");
         }
-        let texture_repo_handle_size = std::mem::size_of::<TextureRepoHandle>();
-        let material_size = texture_repo_handle_size * 1;
-        let colored_material_size = texture_repo_handle_size * 1;
 
-        let palette_section_size = std::mem::size_of::<Color>() * 256;
-        let colored_material_section_size = colored_material_size * 256;
-        let material_section_size = material_size * palette.materials.len();
-        let total_size =
-            palette_section_size + colored_material_section_size + material_section_size;
         if palette.buffer.is_none() {
-            println!("Copied buffer");
+            let texture_repo_handle_size = std::mem::size_of::<TextureRepoHandle>();
+            let material_size = texture_repo_handle_size * 1;
+            let colored_material_size = texture_repo_handle_size * 1;
+
+            let palette_section_size = std::mem::size_of::<Color>() * 256;
+            let colored_material_section_size = colored_material_size * 256;
+            let material_section_size = material_size * palette.materials.len();
+            let total_size = palette_section_size + colored_material_section_size + material_section_size;
+            let alignment: usize = wgpu::COPY_BUFFER_ALIGNMENT as usize;
+            let total_size_aligned = ((total_size + alignment - 1) / alignment) * alignment;
             let staging_buffer = render_resource_context.create_buffer(BufferInfo {
-                size: total_size,
+                size: total_size_aligned,
                 buffer_usage: BufferUsage::COPY_SRC | BufferUsage::MAP_WRITE,
                 mapped_at_creation: true,
             });
@@ -123,7 +122,7 @@ pub fn material_node_system(
             render_resource_context.unmap_buffer(staging_buffer);
 
             let buffer = render_resource_context.create_buffer(BufferInfo {
-                size: total_size,
+                size: total_size_aligned,
                 buffer_usage: BufferUsage::COPY_DST | BufferUsage::STORAGE,
                 mapped_at_creation: false,
             });
@@ -132,18 +131,19 @@ pub fn material_node_system(
                 0,
                 buffer,
                 0,
-                total_size as u64,
+                total_size_aligned as u64,
             );
             palette.staging_buffer = Some(staging_buffer);
             palette.buffer = Some(buffer);
+
+            render_pipelines.bindings.set(
+                "Materials",
+                RenderResourceBinding::Buffer {
+                    buffer: palette.buffer.unwrap(),
+                    range: 0..total_size_aligned as u64,
+                    dynamic_index: None,
+                },
+            )
         }
-        render_resource_bindings.set(
-            "Materials",
-            RenderResourceBinding::Buffer {
-                buffer: palette.buffer.unwrap(),
-                range: 0..total_size as u64,
-                dynamic_index: None,
-            },
-        )
     }
 }

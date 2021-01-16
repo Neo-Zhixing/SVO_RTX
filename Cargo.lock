@@ -2871,6 +2871,7 @@ dependencies = [
  "glam",
  "image",
  "svo",
+ "wgpu",
 ]
 
 [[package]]

@@ -7,7 +7,7 @@ use bevy::{
     prelude::*,
     reflect::TypeUuid,
     render::{
-        exture::TextureFormat,
+        texture::TextureFormat,
         mesh::shape,
         pipeline::{
             BlendDescriptor, ColorStateDescriptor, ColorWrite, IndexFormat, PipelineDescriptor,
@@ -70,12 +70,17 @@ fn setup(
         name: "Rock".into(),
         diffuse: texture_repo.load("assets/textures/rock.jpg"),
     });
+    let plaster_material = materials.add(Material {
+        name: "Plaster".into(),
+        diffuse: texture_repo.load("assets/textures/plaster.jpg")
+    });
 
     let mut palette = material_palettes
         .get_mut(DEFAULT_MATERIAL_PALETTE_HANDLE)
         .unwrap();
     let grass_voxel = palette.add_material(grass_material);
     let rock_voxel = palette.add_material(rock_material);
+    let plaster_voxel = palette.add_material(plaster_material);
 
     let lod = 4;
 

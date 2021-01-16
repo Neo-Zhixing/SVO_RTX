@@ -47,10 +47,6 @@ pub const RAY_PIPELINE_CUBE_HANDLE: HandleUntyped =
 #[derive(Default)]
 pub struct OctreeRayTracerPlugin;
 
-pub struct RayTracerSharedResources {
-    cube_mesh: Handle<Mesh>,
-}
-
 /// A component that indicates that an entity should be drawn in the "main pass"
 #[derive(Clone, Debug, Default, Reflect)]
 #[reflect(Component)]
@@ -139,7 +135,7 @@ impl Plugin for OctreeRayTracerPlugin {
                 .unwrap();
             // Textures
             render_graph.add_node(node::TEXTURE_REPO, TextureRepoNode::new());
-            render_graph.add_node_edge(node::TEXTURE_REPO, node::RAY_PASS);
+            render_graph.add_node_edge(node::TEXTURE_REPO, node::RAY_PASS).unwrap();
 
             // Adding lights
             render_graph.add_system_node(node::LIGHT_NODE, LightsNode::new(16));

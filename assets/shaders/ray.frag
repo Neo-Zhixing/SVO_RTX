@@ -24,29 +24,30 @@ struct Node {
 layout(set = 0, binding = 0) uniform Camera {
     mat4 ViewProj;
 };
-layout(set = 3, binding = 0) uniform Camera3dProjection {
-    mat4 transform;
-    PerspectiveProjection projection;
-};
 
 struct PointLight {
     vec4 Color;
     vec4 pos;
 };
-layout(set = 1, binding = 0) uniform Lights {
+layout(set = 1, binding = 0) uniform Camera3dProjection {
+    mat4 transform;
+    PerspectiveProjection projection;
+};
+layout(set = 1, binding = 1) uniform texture2DArray TextureRepo;
+layout(set = 1, binding = 2) uniform sampler TextureRepoSampler;
+layout(set = 1, binding = 3) uniform Lights {
     vec4 AmbientLightColor;
     vec4 SunLightColor;
     vec3 SunLightDir;
     uint PointLightCount;
     PointLight lights[];
 };
+
 layout(set = 2, binding = 0) readonly buffer Chunk {
     vec4 bounding_box;
     Node nodes[];
 };
-layout(set = 3, binding = 1) uniform texture2DArray TextureRepo;
-layout(set = 3, binding = 2) uniform sampler TextureRepoSampler;
-layout(set = 3, binding = 3) readonly buffer Materials {
+layout(set = 2, binding = 1) readonly buffer Materials {
     vec4 ColorPalettes[256];
     uint16_t ColoredMaterials[256];
     uint16_t RegularMaterials[];
