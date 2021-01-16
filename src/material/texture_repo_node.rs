@@ -1,22 +1,17 @@
 use crate::material::texture_repo::TextureRepo;
 
-
-
 use bevy::prelude::*;
 
 use bevy::render::render_graph::Node;
 use bevy::render::render_graph::{CommandQueue, ResourceSlots};
 use bevy::render::renderer::{
-    BufferInfo, BufferUsage, RenderContext, RenderResourceBinding,
-    RenderResourceBindings, SamplerId, TextureId,
+    BufferInfo, BufferUsage, RenderContext, RenderResourceBinding, RenderResourceBindings,
+    SamplerId, TextureId,
 };
 use bevy::render::texture::{
     AddressMode, Extent3d, FilterMode, SamplerDescriptor, TextureDescriptor, TextureDimension,
     TextureUsage,
 };
-
-
-
 
 #[derive(Debug)]
 pub struct TextureRepoNode {

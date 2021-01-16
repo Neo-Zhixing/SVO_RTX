@@ -7,9 +7,6 @@ use bevy::reflect::TypeUuid;
 
 use bevy::render::renderer::BufferId;
 
-
-
-
 use svo::octree::Octree;
 
 #[derive(TypeUuid)]

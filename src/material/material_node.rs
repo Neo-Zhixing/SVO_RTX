@@ -1,18 +1,14 @@
 use crate::material::texture_repo::TextureRepoHandle;
 use crate::material::{Material, MaterialPalette};
 
-
 use bevy::core::AsBytes;
 use bevy::prelude::*;
 
 use bevy::render::render_graph::Node;
 use bevy::render::render_graph::{CommandQueue, ResourceSlots, SystemNode};
 use bevy::render::renderer::{
-    BufferInfo, BufferUsage, RenderContext, RenderResourceBinding,
-    RenderResourceContext,
+    BufferInfo, BufferUsage, RenderContext, RenderResourceBinding, RenderResourceContext,
 };
-
-
 
 #[derive(Debug)]
 pub struct MaterialNode {
@@ -82,7 +78,8 @@ pub fn material_node_system(
             let palette_section_size = std::mem::size_of::<Color>() * 256;
             let colored_material_section_size = colored_material_size * 256;
             let material_section_size = material_size * palette.materials.len();
-            let total_size = palette_section_size + colored_material_section_size + material_section_size;
+            let total_size =
+                palette_section_size + colored_material_section_size + material_section_size;
             let alignment: usize = wgpu::COPY_BUFFER_ALIGNMENT as usize;
             let total_size_aligned = ((total_size + alignment - 1) / alignment) * alignment;
             let staging_buffer = render_resource_context.create_buffer(BufferInfo {

@@ -3,9 +3,8 @@ use crate::Voxel;
 use bevy::asset::{Handle, HandleUntyped};
 use bevy::reflect::TypeUuid;
 use bevy::render::color::Color;
-use bevy::render::renderer::{BufferId};
+use bevy::render::renderer::BufferId;
 use std::borrow::Cow;
-
 
 pub const DEFAULT_MATERIAL_PALETTE_HANDLE: HandleUntyped =
     HandleUntyped::weak_from_u64(MaterialPalette::TYPE_UUID, 0x786f4ab62875ebbd);

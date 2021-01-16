@@ -1,15 +1,9 @@
-
 use bevy::diagnostic::{DiagnosticsPlugin, FrameTimeDiagnosticsPlugin};
 use bevy::render::camera::PerspectiveProjection;
 
 use bevy::{
     prelude::*,
-    render::{
-        pipeline::{
-            PipelineDescriptor,
-        },
-        render_graph::{base, AssetRenderResourcesNode, RenderGraph},
-    },
+    render::{pipeline::PipelineDescriptor, render_graph::RenderGraph},
 };
 use bevy_fly_camera::{FlyCamera, FlyCameraPlugin};
 use ray_tracing::lights::SunLight;
@@ -65,7 +59,7 @@ fn setup(
     });
     let plaster_material = materials.add(Material {
         name: "Plaster".into(),
-        diffuse: texture_repo.load("assets/textures/plaster.jpg")
+        diffuse: texture_repo.load("assets/textures/plaster.jpg"),
     });
 
     let mut palette = material_palettes

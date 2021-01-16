@@ -1,5 +1,3 @@
-
-
 mod material;
 pub mod texture_repo;
 pub mod texture_repo_node;

@@ -8,7 +8,6 @@ use crate::raytracer::chunk::Chunk;
 use crate::raytracer::chunk_node::ChunkNode;
 use crate::raytracer::projection_node::CameraProjectionNode;
 
-
 use bevy::prelude::*;
 use bevy::reflect::TypeUuid;
 
@@ -20,17 +19,14 @@ use bevy::render::pass::{
 use bevy::render::pipeline::{
     BlendDescriptor, BlendFactor, BlendOperation, ColorStateDescriptor, ColorWrite,
     CompareFunction, CullMode, DepthStencilStateDescriptor, FrontFace, IndexFormat,
-    PipelineDescriptor, PrimitiveTopology, RasterizationStateDescriptor,
-    StencilStateDescriptor, StencilStateFaceDescriptor,
+    PipelineDescriptor, PrimitiveTopology, RasterizationStateDescriptor, StencilStateDescriptor,
+    StencilStateFaceDescriptor,
 };
 use bevy::render::render_graph::base as base_render_graph;
 use bevy::render::render_graph::{PassNode, RenderGraph, WindowSwapChainNode, WindowTextureNode};
 
 use bevy::render::shader::ShaderStages;
-use bevy::render::texture::{
-    TextureFormat,
-};
-
+use bevy::render::texture::TextureFormat;
 
 pub mod chunk;
 pub mod chunk_node;
@@ -132,7 +128,9 @@ impl Plugin for OctreeRayTracerPlugin {
                 .unwrap();
             // Textures
             render_graph.add_node(node::TEXTURE_REPO, TextureRepoNode::new());
-            render_graph.add_node_edge(node::TEXTURE_REPO, node::RAY_PASS).unwrap();
+            render_graph
+                .add_node_edge(node::TEXTURE_REPO, node::RAY_PASS)
+                .unwrap();
 
             // Adding lights
             render_graph.add_system_node(node::LIGHT_NODE, LightsNode::new(16));

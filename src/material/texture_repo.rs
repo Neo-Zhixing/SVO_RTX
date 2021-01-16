@@ -1,7 +1,4 @@
-
-use bevy::render::texture::{
-    Extent3d,
-};
+use bevy::render::texture::Extent3d;
 use image::{DynamicImage, GenericImageView};
 use std::collections::hash_map;
 use std::path::Path;
