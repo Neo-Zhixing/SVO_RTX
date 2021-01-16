@@ -1,6 +1,6 @@
-use bevy::asset::{AssetLoader, AssetPath, AssetServer};
+
 use bevy::render::texture::{
-    Extent3d, ImageTextureLoader, Texture, TextureDescriptor, TextureDimension, TextureUsage,
+    Extent3d,
 };
 use image::{DynamicImage, GenericImageView};
 use std::collections::hash_map;

@@ -1,5 +1,5 @@
 use crate::lights::{AmbientLight, PointLight, SunLight};
-use bevy::core::{AsBytes, Byteable};
+use bevy::core::{AsBytes};
 use bevy::prelude::*;
 use bevy::render::render_graph::{CommandQueue, Node, ResourceSlots, SystemNode};
 use bevy::render::renderer::{

@@ -1,15 +1,15 @@
 use crate::raytracer::chunk::{Chunk, ChunkState};
-use crate::Voxel;
+
 use bevy::core::AsBytes;
 use bevy::prelude::*;
-use bevy::render::camera::{ActiveCameras, Camera, PerspectiveProjection};
+
 use bevy::render::render_graph::Node;
 use bevy::render::render_graph::{CommandQueue, ResourceSlots, SystemNode};
 use bevy::render::renderer::{
-    BufferId, BufferInfo, BufferUsage, RenderContext, RenderResourceBinding,
-    RenderResourceBindings, RenderResourceContext,
+    BufferInfo, BufferUsage, RenderContext, RenderResourceBinding,
+    RenderResourceContext,
 };
-use std::borrow::Cow;
+
 
 #[derive(Debug)]
 pub struct ChunkNode {

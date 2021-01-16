@@ -4,15 +4,12 @@ use crate::raytracer::{RayPass, RAY_PIPELINE_CUBE_HANDLE, RAY_PIPELINE_HANDLE};
 use crate::Voxel;
 use bevy::prelude::*;
 use bevy::reflect::TypeUuid;
-use bevy::render::pipeline::{
-    IndexFormat, InputStepMode, PipelineSpecialization, PrimitiveTopology, RenderPipeline,
-    VertexAttributeDescriptor, VertexBufferDescriptor, VertexFormat,
-};
+
 use bevy::render::renderer::BufferId;
-use std::fmt;
-use std::fmt::Debug;
-use std::fmt::Formatter;
-use std::fmt::Result;
+
+
+
+
 use svo::octree::Octree;
 
 #[derive(TypeUuid)]

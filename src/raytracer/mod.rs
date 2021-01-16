@@ -7,11 +7,11 @@ use crate::material::{Material, MaterialPalette, DEFAULT_MATERIAL_PALETTE_HANDLE
 use crate::raytracer::chunk::Chunk;
 use crate::raytracer::chunk_node::ChunkNode;
 use crate::raytracer::projection_node::CameraProjectionNode;
-use bevy::core::AsBytes;
-use bevy::prelude::shape::Cube;
+
+
 use bevy::prelude::*;
 use bevy::reflect::TypeUuid;
-use bevy::render::draw::{DrawContext, RenderCommand};
+
 use bevy::render::mesh::Indices;
 use bevy::render::pass::{
     LoadOp, Operations, PassDescriptor, RenderPassColorAttachmentDescriptor,
@@ -19,21 +19,18 @@ use bevy::render::pass::{
 };
 use bevy::render::pipeline::{
     BlendDescriptor, BlendFactor, BlendOperation, ColorStateDescriptor, ColorWrite,
-    CompareFunction, CullMode, DepthStencilStateDescriptor, FrontFace, IndexFormat, InputStepMode,
-    PipelineDescriptor, PipelineSpecialization, PrimitiveTopology, RasterizationStateDescriptor,
-    RenderPipeline, StencilStateDescriptor, StencilStateFaceDescriptor, VertexAttributeDescriptor,
-    VertexBufferDescriptor, VertexFormat,
+    CompareFunction, CullMode, DepthStencilStateDescriptor, FrontFace, IndexFormat,
+    PipelineDescriptor, PrimitiveTopology, RasterizationStateDescriptor,
+    StencilStateDescriptor, StencilStateFaceDescriptor,
 };
 use bevy::render::render_graph::base as base_render_graph;
 use bevy::render::render_graph::{PassNode, RenderGraph, WindowSwapChainNode, WindowTextureNode};
-use bevy::render::renderer::{
-    BufferId, BufferInfo, BufferUsage, RenderResourceBindings, RenderResourceContext,
-};
+
 use bevy::render::shader::ShaderStages;
 use bevy::render::texture::{
-    Extent3d, TextureDescriptor, TextureDimension, TextureFormat, TextureUsage,
+    TextureFormat,
 };
-use bevy::window::WindowId;
+
 
 pub mod chunk;
 pub mod chunk_node;

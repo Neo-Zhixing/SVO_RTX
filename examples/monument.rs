@@ -1,21 +1,14 @@
-use bevy::asset::HandleId;
+
 use bevy::diagnostic::{DiagnosticsPlugin, FrameTimeDiagnosticsPlugin};
 use bevy::render::camera::PerspectiveProjection;
-use bevy::render::draw::DrawContext;
-use bevy::render::mesh::Indices;
+
 use bevy::{
     prelude::*,
-    reflect::TypeUuid,
     render::{
-        texture::TextureFormat,
-        mesh::shape,
         pipeline::{
-            BlendDescriptor, ColorStateDescriptor, ColorWrite, IndexFormat, PipelineDescriptor,
-            PrimitiveTopology, RenderPipeline,
+            PipelineDescriptor,
         },
         render_graph::{base, AssetRenderResourcesNode, RenderGraph},
-        renderer::RenderResources,
-        shader::ShaderStages,
     },
 };
 use bevy_fly_camera::{FlyCamera, FlyCameraPlugin};
@@ -54,10 +47,10 @@ fn main() {
 
 fn setup(
     commands: &mut Commands,
-    asset_server: ResMut<AssetServer>,
-    mut pipelines: ResMut<Assets<PipelineDescriptor>>,
+    _asset_server: ResMut<AssetServer>,
+    _pipelines: ResMut<Assets<PipelineDescriptor>>,
     mut chunks: ResMut<Assets<Chunk>>,
-    mut render_graph: ResMut<RenderGraph>,
+    _render_graph: ResMut<RenderGraph>,
     mut texture_repo: ResMut<TextureRepo>,
     mut material_palettes: ResMut<Assets<MaterialPalette>>,
     mut materials: ResMut<Assets<Material>>,
@@ -80,9 +73,9 @@ fn setup(
         .unwrap();
     let grass_voxel = palette.add_material(grass_material);
     let rock_voxel = palette.add_material(rock_material);
-    let plaster_voxel = palette.add_material(plaster_material);
+    let _plaster_voxel = palette.add_material(plaster_material);
 
-    let lod = 4;
+    let _lod = 4;
 
     let mut octree2: Octree<Voxel> = Octree::new();
     let monument = dot_vox::load("assets/monu9.vox").unwrap();

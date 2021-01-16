@@ -1,18 +1,18 @@
 use crate::material::texture_repo::TextureRepoHandle;
 use crate::material::{Material, MaterialPalette};
-use crate::raytracer::chunk::{Chunk, ChunkState};
-use crate::Voxel;
+
+
 use bevy::core::AsBytes;
 use bevy::prelude::*;
-use bevy::render::camera::{ActiveCameras, Camera, PerspectiveProjection};
+
 use bevy::render::render_graph::Node;
 use bevy::render::render_graph::{CommandQueue, ResourceSlots, SystemNode};
 use bevy::render::renderer::{
-    BufferId, BufferInfo, BufferUsage, RenderContext, RenderResourceBinding,
-    RenderResourceBindings, RenderResourceContext,
+    BufferInfo, BufferUsage, RenderContext, RenderResourceBinding,
+    RenderResourceContext,
 };
-use std::borrow::Cow;
-use svo::octree::Octree;
+
+
 
 #[derive(Debug)]
 pub struct MaterialNode {
