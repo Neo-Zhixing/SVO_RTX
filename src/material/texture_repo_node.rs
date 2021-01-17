@@ -50,46 +50,9 @@ impl Node for TextureRepoNode {
             return;
         }
         let mut repo = repo.unwrap();
-        if repo.len() == 0 || repo.textures.is_empty() {
-            // Nothing is inside our texture repo
-            return;
-        }
-        if self.size.depth < repo.len() as u32 {
-            // Texture size increased, needs to create a larger texture now.
-            let new_size = repo.get_extent();
-            println!("Created new 3d texture");
-            let new_texture = render_context
-                .resources()
-                .create_texture(TextureDescriptor {
-                    size: new_size,
-                    mip_level_count: 1,
-                    sample_count: 1,
-                    dimension: TextureDimension::D2,
-                    format: Default::default(),
-                    usage: TextureUsage::COPY_DST | TextureUsage::SAMPLED,
-                });
-            if let Some(old_texture) = self.texture {
-                render_context.copy_texture_to_texture(
-                    old_texture,
-                    [0, 0, 0],
-                    0,
-                    new_texture,
-                    [0, 0, 0],
-                    0,
-                    self.size,
-                );
-                render_context.resources().remove_texture(old_texture);
-            }
 
-            self.texture = Some(new_texture);
-            self.size = new_size;
-
-            let mut render_resource_bindings =
-                resources.get_mut::<RenderResourceBindings>().unwrap();
-            render_resource_bindings
-                .set("TextureRepo", RenderResourceBinding::Texture(new_texture));
-        }
         if self.sampler.is_none() {
+            println!("created sampler");
             let sampler = render_context
                 .resources()
                 .create_sampler(&SamplerDescriptor {
@@ -111,6 +74,68 @@ impl Node for TextureRepoNode {
                 RenderResourceBinding::Sampler(sampler),
             );
             self.sampler = Some(sampler);
+        }
+        if self.texture.is_none() && repo.len() == 0 {
+            // Initial state. Create placeholder texture.
+            println!("created placeholde texture");
+            let new_texture = render_context
+                .resources()
+                .create_texture(TextureDescriptor {
+                    size: Extent3d {
+                        width: 1,
+                        height: 1,
+                        depth: 1
+                    },
+                    mip_level_count: 1,
+                    sample_count: 1,
+                    dimension: TextureDimension::D2,
+                    format: Default::default(),
+                    usage: TextureUsage::SAMPLED,
+                });
+
+            self.texture = Some(new_texture);
+
+            let mut render_resource_bindings =
+                resources.get_mut::<RenderResourceBindings>().unwrap();
+            render_resource_bindings
+                .set("TextureRepo", RenderResourceBinding::Texture(new_texture));
+        }
+        if self.size.depth < repo.len() as u32 {
+            // Texture size increased, needs to create a larger texture now.
+            let new_size = repo.get_extent();
+            println!("Created new 3d texture");
+            let new_texture = render_context
+                .resources()
+                .create_texture(TextureDescriptor {
+                    size: new_size,
+                    mip_level_count: 1,
+                    sample_count: 1,
+                    dimension: TextureDimension::D2,
+                    format: Default::default(),
+                    usage: TextureUsage::COPY_DST | TextureUsage::SAMPLED,
+                });
+            if let Some(old_texture) = self.texture {
+                if self.size.depth > 0 {
+                    render_context.copy_texture_to_texture(
+                        old_texture,
+                        [0, 0, 0],
+                        0,
+                        new_texture,
+                        [0, 0, 0],
+                        0,
+                        self.size,
+                    );
+                }
+                render_context.resources().remove_texture(old_texture);
+            }
+
+            self.texture = Some(new_texture);
+            self.size = new_size;
+
+            let mut render_resource_bindings =
+                resources.get_mut::<RenderResourceBindings>().unwrap();
+            render_resource_bindings
+                .set("TextureRepo", RenderResourceBinding::Texture(new_texture));
         }
         // Copy new textures
         let image_size: usize =
