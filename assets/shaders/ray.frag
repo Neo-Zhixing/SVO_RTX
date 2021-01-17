@@ -47,10 +47,27 @@ layout(set = 2, binding = 0) readonly buffer Chunk {
     vec4 bounding_box;
     Node nodes[];
 };
-layout(set = 2, binding = 1) readonly buffer Materials {
-    vec4 ColorPalettes[256];
-    uint16_t ColoredMaterials[256];
-    uint16_t RegularMaterials[];
+
+struct Material {
+    float scale;
+    uint16_t diffuse;
+    uint16_t normal;
+    float _reserved1;
+    float _reserved2;
+};
+struct ColoredMaterial {
+    float scale;
+    uint16_t diffuse;
+    uint16_t normal;
+    float _reserved1;
+    float _reserved2;
+    vec4 palette[256];
+};
+layout(set = 2, binding = 1) readonly buffer ColoredMaterials {
+    ColoredMaterial coloredMaterials[];
+};
+layout(set = 2, binding = 2) readonly buffer Materials {
+    Material regularMaterials[];
 };
 struct Ray {
     vec3 origin;
@@ -189,21 +206,36 @@ void main() {
     float depth;
     vec3 hitpoint;
     vec4 hitbox;
-    uint material_id = RayMarch(bounding_box, ray, hitpoint, hitbox);
-    uint texture_id = uint(RegularMaterials[material_id-1]);
+    uint voxel_id = RayMarch(bounding_box, ray, hitpoint, hitbox);
 
-    // Calculate normal
     vec3 normal = cubed_normalize(hitpoint - (hitbox.xyz + hitbox.w/2));
     vec2 texcoords = vec2(
         dot(vec3(hitpoint.z, hitpoint.x, -hitpoint.x), normal),
         dot(-sign(normal) * vec3(hitpoint.y, hitpoint.z, hitpoint.y), normal)
     );
+    vec4 output_color;
+    uint diffuse_texture_id;
+    if (voxel_id == 0) {
+        return;
+    } else if ((voxel_id & 0x8000) == 0) {
+        // regular
+        uint material_id = voxel_id - 1;
+        diffuse_texture_id = uint(regularMaterials[material_id].diffuse);
+        output_color = vec4(1.0, 1.0, 1.0, 1.0);
+    } else {
+        // colored
+        uint material_id = (voxel_id >> 8) & 0x7f;
+        uint color = voxel_id & 0xff;
+        diffuse_texture_id = uint(coloredMaterials[material_id].diffuse);
+        output_color = coloredMaterials[material_id].palette[color];
+    }
 
-    //vec4 output_color = palleet[material_id];
-    vec4 output_color = texture(
-        sampler2DArray(TextureRepo,  TextureRepoSampler),
-        vec3(texcoords, texture_id)
-    );
+    if (diffuse_texture_id > 0) {
+        output_color *= texture(
+            sampler2DArray(TextureRepo,  TextureRepoSampler),
+            vec3(texcoords, diffuse_texture_id-1)
+        );
+    }
 
 
     // Calculate ambient

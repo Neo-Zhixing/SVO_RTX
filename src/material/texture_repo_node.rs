@@ -50,11 +50,11 @@ impl Node for TextureRepoNode {
             return;
         }
         let mut repo = repo.unwrap();
-        if repo.length == 0 || repo.textures.is_empty() {
+        if repo.len() == 0 || repo.textures.is_empty() {
             // Nothing is inside our texture repo
             return;
         }
-        if self.size.depth < repo.length as u32 {
+        if self.size.depth < repo.len() as u32 {
             // Texture size increased, needs to create a larger texture now.
             let new_size = repo.get_extent();
             println!("Created new 3d texture");
@@ -115,7 +115,7 @@ impl Node for TextureRepoNode {
         // Copy new textures
         let image_size: usize =
             self.size.width as usize * self.size.height as usize * std::mem::size_of::<u32>();
-        for (handle, image) in repo.textures.drain() {
+        for (handle, image) in repo.drain() {
             println!("Copied texture");
             let image = image.into_bgra8();
             let staging_buffer = render_context.resources().create_buffer(BufferInfo {
@@ -135,7 +135,7 @@ impl Node for TextureRepoNode {
                 0,
                 std::mem::size_of::<u32>() as u32 * self.size.width,
                 self.texture.unwrap(),
-                [0, 0, handle.0 as u32],
+                [0, 0, handle.get() as u32 - 1],
                 0,
                 Extent3d {
                     width: self.size.width,

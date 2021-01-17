@@ -16,6 +16,7 @@ pub struct Voxel(u16);
 // 0:  Air
 // 0x01 - 0x80: 2^15 - 1 = 32767 standarlone blocks
 // 0x80 - 0xFF:
+#[derive(Debug)]
 pub enum VoxelData {
     Regular(u16),
     Colored(u8, u8),
@@ -31,12 +32,18 @@ impl Voxel {
         Voxel(id)
     }
     pub fn get(&self) -> VoxelData {
-        if self.0 & 0x80 == 0 {
+        if self.0 & 0x8000 == 0 {
             VoxelData::Regular(self.0)
         } else {
             let voxel_id = (self.0 >> 8) as u8 & 0x7f;
             let color = (self.0 & 0xff) as u8;
             VoxelData::Colored(voxel_id, color)
+        }
+    }
+    pub fn with_color(&self, color: u8) -> Voxel {
+        match self.get() {
+            VoxelData::Regular(_) => self.clone(),
+            VoxelData::Colored(id, _) => Voxel::new_colored(id, color)
         }
     }
 }
@@ -68,6 +75,6 @@ impl svo::Voxel for Voxel {
 
 impl Debug for Voxel {
     fn fmt(&self, f: &mut Formatter<'_>) -> Result {
-        self.0.fmt(f)
+        self.get().fmt(f)
     }
 }

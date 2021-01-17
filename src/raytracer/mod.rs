@@ -170,12 +170,10 @@ impl Plugin for OctreeRayTracerPlugin {
                 .set_untracked(RAY_PIPELINE_CUBE_HANDLE, mesh);
         };
         app.add_asset::<Chunk>()
-            .add_asset::<Material>()
             .add_asset::<MaterialPalette>()
             .add_resource(AmbientLight {
                 color: Color::rgb_linear(0.2, 0.2, 0.2),
             })
-            .add_resource(TextureRepo::new(1024, 1024))
             .add_resource(SunLight {
                 color: Color::rgb_linear(0.8, 0.8, 0.8),
                 direction: Vec3::new(0.5, 0.5, 0.5).normalize(),
