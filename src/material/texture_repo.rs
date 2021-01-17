@@ -1,9 +1,9 @@
+use bevy::core::Bytes;
 use bevy::render::texture::Extent3d;
 use image::{DynamicImage, GenericImageView};
 use std::collections::hash_map;
-use std::path::Path;
-use bevy::core::Bytes;
 use std::num::NonZeroU16;
+use std::path::Path;
 
 pub struct TextureRepo {
     width: u32,
@@ -37,10 +37,10 @@ impl TextureRepo {
             width,
             height,
             textures: hash_map::HashMap::new(),
-            length: 0
+            length: 0,
         }
     }
-    pub fn drain(&mut self) -> impl Iterator<Item=(TextureRepoHandle, DynamicImage)> + '_ {
+    pub fn drain(&mut self) -> impl Iterator<Item = (TextureRepoHandle, DynamicImage)> + '_ {
         self.textures.drain()
     }
     pub fn len(&self) -> u16 {
@@ -51,11 +51,7 @@ impl TextureRepo {
         assert_eq!(image.width(), self.width);
         assert_eq!(image.height(), self.height);
         self.length += 1;
-        let handle = TextureRepoHandle(
-            unsafe {
-                NonZeroU16::new_unchecked(self.length)
-            }
-        );
+        let handle = TextureRepoHandle(unsafe { NonZeroU16::new_unchecked(self.length) });
         self.textures.insert(handle, image);
         handle
     }

@@ -43,7 +43,7 @@ impl Voxel {
     pub fn with_color(&self, color: u8) -> Voxel {
         match self.get() {
             VoxelData::Regular(_) => self.clone(),
-            VoxelData::Colored(id, _) => Voxel::new_colored(id, color)
+            VoxelData::Colored(id, _) => Voxel::new_colored(id, color),
         }
     }
 }

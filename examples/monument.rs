@@ -1,19 +1,15 @@
 use bevy::diagnostic::{DiagnosticsPlugin, FrameTimeDiagnosticsPlugin};
 use bevy::render::camera::PerspectiveProjection;
 
-use bevy::{
-    prelude::*,
-    render::{pipeline::PipelineDescriptor, render_graph::RenderGraph},
-};
+use bevy::prelude::*;
 use bevy_fly_camera::{FlyCamera, FlyCameraPlugin};
 use ray_tracing::lights::SunLight;
 use ray_tracing::material::texture_repo::TextureRepo;
-use ray_tracing::material::{Material, MaterialPalette, DEFAULT_MATERIAL_PALETTE_HANDLE, ColoredMaterial};
+use ray_tracing::material::{ColoredMaterial, MaterialPalette, DEFAULT_MATERIAL_PALETTE_HANDLE};
 use ray_tracing::raytracer::chunk::{Chunk, ChunkBundle};
 use ray_tracing::OctreeRayTracerPlugin;
 use ray_tracing::Voxel;
 use svo::octree::Octree;
-use bevy::window::WindowMode;
 
 /// This example illustrates how to load shaders such that they can be
 /// edited while the example is still running.
@@ -48,7 +44,7 @@ fn setup(
 ) {
     let mut colored_material = ColoredMaterial::default();
 
-    let mut palette = material_palettes
+    let palette = material_palettes
         .get_mut(DEFAULT_MATERIAL_PALETTE_HANDLE)
         .unwrap();
 
@@ -66,7 +62,7 @@ fn setup(
             r as f32 / std::u8::MAX as f32,
             g as f32 / std::u8::MAX as f32,
             b as f32 / std::u8::MAX as f32,
-            a as f32 / std::u8::MAX as f32
+            a as f32 / std::u8::MAX as f32,
         );
         colored_material.color_palette[i] = color;
     }
@@ -77,7 +73,7 @@ fn setup(
             voxel.z as u32,
             voxel.y as u32,
             256,
-            colored_voxel.with_color(voxel.i)
+            colored_voxel.with_color(voxel.i),
         );
     }
 

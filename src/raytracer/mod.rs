@@ -1,9 +1,9 @@
 use crate::lights::node::LightsNode;
 use crate::lights::{AmbientLight, SunLight};
 use crate::material::material_node::MaterialNode;
-use crate::material::texture_repo::TextureRepo;
+
 use crate::material::texture_repo_node::TextureRepoNode;
-use crate::material::{Material, MaterialPalette, DEFAULT_MATERIAL_PALETTE_HANDLE};
+use crate::material::{MaterialPalette, DEFAULT_MATERIAL_PALETTE_HANDLE};
 use crate::raytracer::chunk::Chunk;
 use crate::raytracer::chunk_node::ChunkNode;
 use crate::raytracer::projection_node::CameraProjectionNode;

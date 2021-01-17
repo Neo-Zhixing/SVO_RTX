@@ -1,7 +1,5 @@
-use crate::material::texture_repo::TextureRepoHandle;
-use crate::material::{Material, MaterialPalette};
+use crate::material::MaterialPalette;
 
-use bevy::core::{AsBytes, Bytes};
 use bevy::prelude::*;
 
 use bevy::render::render_graph::Node;
@@ -74,7 +72,8 @@ pub fn material_node_system(
         }
 
         let colored_materials_size = palette.colored_materials_size();
-        let colored_materials_size_aligned = align_to(colored_materials_size, wgpu::BIND_BUFFER_ALIGNMENT as usize);
+        let colored_materials_size_aligned =
+            align_to(colored_materials_size, wgpu::BIND_BUFFER_ALIGNMENT as usize);
         let total_size = colored_materials_size_aligned + palette.materials_size();
         let total_size_aligned = align_to(total_size, wgpu::COPY_BUFFER_ALIGNMENT as usize);
 
@@ -90,7 +89,9 @@ pub fn material_node_system(
                 &mut |data: &mut [u8], _renderer| {
                     // Color palette
                     palette.colored_materials_write_bytes(&mut data[0..colored_materials_size]);
-                    palette.materials_write_bytes(&mut data[colored_materials_size_aligned..total_size]);
+                    palette.materials_write_bytes(
+                        &mut data[colored_materials_size_aligned..total_size],
+                    );
                 },
             );
             render_resource_context.unmap_buffer(staging_buffer);
@@ -126,7 +127,6 @@ pub fn material_node_system(
                     dynamic_index: None,
                 },
             );
-            println!("palette buffer is {:?}", palette.buffer.unwrap());
         }
     }
 }

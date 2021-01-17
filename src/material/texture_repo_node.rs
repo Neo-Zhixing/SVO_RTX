@@ -52,7 +52,6 @@ impl Node for TextureRepoNode {
         let mut repo = repo.unwrap();
 
         if self.sampler.is_none() {
-            println!("created sampler");
             let sampler = render_context
                 .resources()
                 .create_sampler(&SamplerDescriptor {
@@ -77,14 +76,13 @@ impl Node for TextureRepoNode {
         }
         if self.texture.is_none() && repo.len() == 0 {
             // Initial state. Create placeholder texture.
-            println!("created placeholde texture");
             let new_texture = render_context
                 .resources()
                 .create_texture(TextureDescriptor {
                     size: Extent3d {
                         width: 1,
                         height: 1,
-                        depth: 1
+                        depth: 1,
                     },
                     mip_level_count: 1,
                     sample_count: 1,
@@ -103,7 +101,6 @@ impl Node for TextureRepoNode {
         if self.size.depth < repo.len() as u32 {
             // Texture size increased, needs to create a larger texture now.
             let new_size = repo.get_extent();
-            println!("Created new 3d texture");
             let new_texture = render_context
                 .resources()
                 .create_texture(TextureDescriptor {
@@ -141,7 +138,6 @@ impl Node for TextureRepoNode {
         let image_size: usize =
             self.size.width as usize * self.size.height as usize * std::mem::size_of::<u32>();
         for (handle, image) in repo.drain() {
-            println!("Copied texture");
             let image = image.into_bgra8();
             let staging_buffer = render_context.resources().create_buffer(BufferInfo {
                 size: image_size,

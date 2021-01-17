@@ -1,11 +1,11 @@
 use crate::material::texture_repo::TextureRepoHandle;
 use crate::Voxel;
-use bevy::asset::{Handle, HandleUntyped};
+use bevy::asset::HandleUntyped;
+use bevy::core::{AsBytes, Bytes};
 use bevy::reflect::TypeUuid;
 use bevy::render::color::Color;
 use bevy::render::renderer::BufferId;
 use std::borrow::Cow;
-use bevy::core::{Bytes, AsBytes};
 use std::fmt::{Debug, Formatter, Result};
 
 pub const DEFAULT_MATERIAL_PALETTE_HANDLE: HandleUntyped =
@@ -57,9 +57,9 @@ impl Default for ColoredMaterial {
                 name: "PlainColor".into(),
                 scale: 0.0,
                 diffuse: None,
-                normal: None
+                normal: None,
             },
-            color_palette: [Color::BLACK; 256]
+            color_palette: [Color::BLACK; 256],
         }
     }
 }
@@ -78,7 +78,8 @@ impl Debug for ColoredMaterial {
 
 impl Bytes for ColoredMaterial {
     fn write_bytes(&self, buffer: &mut [u8]) {
-        self.material.write_bytes(&mut buffer[0..MATERIAL_DATA_SIZE]);
+        self.material
+            .write_bytes(&mut buffer[0..MATERIAL_DATA_SIZE]);
         buffer[MATERIAL_DATA_SIZE..].copy_from_slice(self.color_palette.as_bytes());
     }
     fn byte_len(&self) -> usize {
@@ -101,8 +102,7 @@ impl MaterialPalette {
         Voxel::new(self.materials.len() as u16)
     }
     pub fn add_colored_material(&mut self, material: ColoredMaterial) -> Voxel {
-        let voxel =
-            Voxel::new_colored(self.colored_materials.len() as u8, 0);
+        let voxel = Voxel::new_colored(self.colored_materials.len() as u8, 0);
         self.colored_materials.push(material);
         voxel
     }
