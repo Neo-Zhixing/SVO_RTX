@@ -10,9 +10,13 @@ edition = "2018"
 glam = "*"
 bevy_fly_camera = "0.6"
 svo = { path = "../svo" }
-dot_vox = "4.1.0"
 image = "0.23.12"
 wgpu = "*"
+
+[dev-dependencies]
+dot_vox = "4.1.0"
+fastnbt = "0.14.0"
+fastanvil = "0.14.1"
 
 [dependencies.bevy]
 version = "0.4"

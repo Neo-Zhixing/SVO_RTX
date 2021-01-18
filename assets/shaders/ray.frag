@@ -215,6 +215,7 @@ void main() {
     );
     vec4 output_color;
     uint diffuse_texture_id;
+    float scale;
     if (voxel_id == 0) {
         return;
     } else if ((voxel_id & 0x8000) == 0) {
@@ -222,18 +223,20 @@ void main() {
         uint material_id = voxel_id - 1;
         diffuse_texture_id = uint(regularMaterials[material_id].diffuse);
         output_color = vec4(1.0, 1.0, 1.0, 1.0);
+        scale = regularMaterials[material_id].scale;
     } else {
         // colored
         uint material_id = (voxel_id >> 8) & 0x7f;
         uint color = voxel_id & 0xff;
         diffuse_texture_id = uint(coloredMaterials[material_id].diffuse);
         output_color = coloredMaterials[material_id].palette[color];
+        scale = coloredMaterials[material_id].scale;
     }
 
     if (diffuse_texture_id > 0) {
         output_color *= texture(
             sampler2DArray(TextureRepo,  TextureRepoSampler),
-            vec3(texcoords, diffuse_texture_id-1)
+            vec3(texcoords * scale, diffuse_texture_id-1)
         );
     }
 

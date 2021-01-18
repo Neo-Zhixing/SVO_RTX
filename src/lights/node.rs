@@ -138,7 +138,7 @@ pub fn lights_node_system(
             data[current_size_head..current_size_tail]
                 .copy_from_slice(sun_light_color_data.as_bytes());
 
-            let sun_light_dir_data: [f32; 3] = sun_light_resource.direction.into();
+            let sun_light_dir_data: [f32; 3] = sun_light_resource.direction.normalize().into();
             let size = std::mem::size_of::<[f32; 3]>();
             current_size_head = current_size_tail;
             current_size_tail += size;
