@@ -142,7 +142,7 @@ fn setup(
                         "minecraft:acacia_leaves" => leaves_voxel,
                         "minecraft:dirt" => dirt_voxel,
                         _ => {
-                            println!("{:?}", block.name);
+                            println!("Missing block: w {:?}", block.name);
                             colored_voxel
                         }
                     };

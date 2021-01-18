@@ -9,7 +9,7 @@ edition = "2018"
 [dependencies]
 glam = "*"
 bevy_fly_camera = "0.6"
-svo = { path = "../svo" }
+svo = "*"
 image = "0.23.12"
 wgpu = "*"
 
@@ -37,4 +37,4 @@ features = [
 
 
 [patch.crates-io]
-bevy = { path = "../bevy" }
+bevy = { git = "https://github.com/bevyengine/bevy.git" }
