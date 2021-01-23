@@ -89,6 +89,12 @@ fn setup(
         diffuse: Some(texture_repo.load("assets/textures/dirt.png")),
         normal: None,
     };
+    let sand_material = Material {
+        name: "sand".into(),
+        scale,
+        diffuse: Some(texture_repo.load("assets/textures/sand.png")),
+        normal: None,
+    };
 
     let palette = material_palettes
         .get_mut(DEFAULT_MATERIAL_PALETTE_HANDLE)
@@ -104,6 +110,7 @@ fn setup(
     let stone_voxel = palette.add_material(stone_material);
     let log_voxel = palette.add_material(log_material);
     let dirt_voxel = palette.add_material(dirt_material);
+    let sand_voxel = palette.add_material(sand_material);
 
     let args: Vec<_> = std::env::args().skip(1).collect();
     assert_eq!(args.len(), 1, "Format: mcanvil <mca filepath>");
@@ -158,7 +165,7 @@ fn setup(
                                     "minecraft:acacia_leaves" => leaves_voxel,
                                     "minecraft:dirt" => dirt_voxel,
                                     "minecraft:water" => colored_voxel.with_color(1),
-                                    "minecraft:sand" => colored_voxel.with_color(2),
+                                    "minecraft:sand" => sand_voxel,
                                     "minecraft:lava" => colored_voxel.with_color(3),
                                     _ => {
                                         //println!("Missing block: w {:?}", block.name);
