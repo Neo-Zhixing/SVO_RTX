@@ -154,7 +154,7 @@ uint RayMarch(vec4 initial_box, Ray ray, out vec3 hitpoint, out vec4 hitbox) {
     hitbox = initial_box;
     vec2 intersection = intersectAABB(ray.origin, ray.dir, hitbox);
     vec3 entry_point = ray.origin + max(0, intersection.x) * ray.dir;
-    vec3 test_point = entry_point + sign(ray.dir) * hitbox.w * 0.0001;
+    vec3 test_point = entry_point + ray.dir * hitbox.w * 0.000001;
     uint material_id = 0;
 
     for(uint counter = 0; counter < 100 && containsAABB(test_point, bounding_box); counter++) {
@@ -162,14 +162,14 @@ uint RayMarch(vec4 initial_box, Ray ray, out vec3 hitpoint, out vec4 hitbox) {
         material_id = material_at_position(hitbox, test_point);
         if (material_id > 0) {
             // get the depth info from entry_point
-            vec4 entry_point_camera_space = ViewProj * vec4(test_point, 1.0);
+            vec4 entry_point_camera_space = ViewProj * vec4(entry_point, 1.0);
             gl_FragDepth = ((entry_point_camera_space.z/entry_point_camera_space.w) + 1.0) * 0.5 ;
             break;
         }
         // calculate the next t_min
-        vec2 new_intersection = intersectAABB(test_point, ray.dir, hitbox);
+        vec2 new_intersection = intersectAABB(entry_point, ray.dir, hitbox);
 
-        entry_point = test_point + ray.dir * new_intersection.y;
+        entry_point = entry_point + ray.dir * new_intersection.y;
         test_point = entry_point + sign(ray.dir) * hitbox.w * 0.0001;
     }
     hitpoint = entry_point;

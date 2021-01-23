@@ -41,7 +41,7 @@ impl SystemNode for MaterialNode {
             system.id(),
             MaterialNodeState {
                 command_queue: self.command_queue.clone(),
-                event_reader: Default::default()
+                event_reader: Default::default(),
             },
         );
         Box::new(system)
@@ -61,7 +61,6 @@ pub fn material_node_system(
     texture_events: Res<Events<AssetEvent<MaterialPalette>>>,
     mut query: Query<(&Handle<MaterialPalette>, &mut RenderPipelines)>,
 ) {
-
     let render_resource_context = &**render_resource_context;
     for event in state.event_reader.iter(&texture_events) {
         match event {
@@ -91,7 +90,9 @@ pub fn material_node_system(
                         0..(total_size as u64),
                         &mut |data: &mut [u8], _renderer| {
                             // Color palette
-                            palette.colored_materials_write_bytes(&mut data[0..colored_materials_size]);
+                            palette.colored_materials_write_bytes(
+                                &mut data[0..colored_materials_size],
+                            );
                             palette.materials_write_bytes(
                                 &mut data[colored_materials_size_aligned..total_size],
                             );
@@ -115,10 +116,10 @@ pub fn material_node_system(
                     palette.buffer = Some(buffer);
                 }
             }
-            AssetEvent::Modified { handle } => {
+            AssetEvent::Modified { handle: _ } => {
                 println!("palette modified");
             }
-            AssetEvent::Removed { handle } => {
+            AssetEvent::Removed { handle: _ } => {
                 println!("palette removed")
             }
         }
