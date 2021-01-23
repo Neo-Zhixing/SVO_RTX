@@ -103,6 +103,7 @@ fn setup(
     let args: Vec<_> = std::env::args().skip(1).collect();
     assert_eq!(args.len(), 1, "Format: mcanvil <mca filepath>");
     let region_dir = args[0].clone();
+    println!("Using region dir {}", region_dir);
 
     let colored_voxel = palette.add_colored_material(colored_material);
     let grass_voxel = palette.add_colored_material(grass_material);
