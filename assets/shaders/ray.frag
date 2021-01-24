@@ -42,6 +42,7 @@ layout(set = 1, binding = 3) uniform Lights {
     uint PointLightCount;
     PointLight lights[];
 };
+layout (constant_id = 0) const uint MAX_ITERATION_VALUE = 100;
 
 layout(set = 2, binding = 0) readonly buffer Chunk {
     vec4 bounding_box;
@@ -150,20 +151,29 @@ vec3 cubed_normalize(vec3 dir) {
 }
 
 
-uint RayMarch(vec4 initial_box, Ray ray, out vec3 hitpoint, out vec4 hitbox) {
+uint RayMarch(vec4 initial_box, Ray ray, out vec3 hitpoint, out vec4 hitbox, out uint iteration_times) {
     hitbox = initial_box;
     vec2 intersection = intersectAABB(ray.origin, ray.dir, hitbox);
     vec3 entry_point = ray.origin + max(0, intersection.x) * ray.dir;
     vec3 test_point = entry_point + ray.dir * hitbox.w * 0.000001;
     uint material_id = 0;
 
-    for(uint counter = 0; counter < 100 && containsAABB(test_point, bounding_box); counter++) {
+    uint counter;
+    for(counter = 0;; counter++) {
+        vec4 entry_point_camera_space = ViewProj * vec4(entry_point, 1.0);
+        gl_FragDepth = ((entry_point_camera_space.z/entry_point_camera_space.w) + 1.0) * 0.5;
+        if (counter >= MAX_ITERATION_VALUE) {
+            // Ray tracing failed
+            break;
+        }
+        if (!containsAABB(test_point, bounding_box)) {
+            // Outside the box
+            discard;
+        }
         hitbox = initial_box;
         material_id = material_at_position(hitbox, test_point);
         if (material_id > 0) {
-            // get the depth info from entry_point
-            vec4 entry_point_camera_space = ViewProj * vec4(entry_point, 1.0);
-            gl_FragDepth = ((entry_point_camera_space.z/entry_point_camera_space.w) + 1.0) * 0.5 ;
+            // Hit some materials
             break;
         }
         // calculate the next t_min
@@ -173,6 +183,7 @@ uint RayMarch(vec4 initial_box, Ray ray, out vec3 hitpoint, out vec4 hitbox) {
         test_point = entry_point + sign(ray.dir) * hitbox.w * 0.0001;
     }
     hitpoint = entry_point;
+    iteration_times = counter;
     return material_id;
 }
 
@@ -181,7 +192,7 @@ bool RayMarchTest(vec4 initial_box, Ray ray) {
     vec4 hitbox = initial_box;
     vec2 intersection = intersectAABB(ray.origin, ray.dir, hitbox);
     vec3 entry_point = ray.origin + max(0, intersection.x) * ray.dir;
-    vec3 test_point = entry_point + sign(ray.dir) * hitbox.w * 0.0001;
+    vec3 test_point = entry_point + ray.dir * hitbox.w * 0.000001;
     uint material_id = 0;
 
     for(uint counter = 0; counter < 50 && containsAABB(test_point, bounding_box); counter++) {
@@ -201,12 +212,17 @@ bool RayMarchTest(vec4 initial_box, Ray ray) {
 }
 void main() {
     Ray ray = generate_ray();
-    gl_FragDepth = 1.0; // inf far by default
 
     float depth;
     vec3 hitpoint;
     vec4 hitbox;
-    uint voxel_id = RayMarch(bounding_box, ray, hitpoint, hitbox);
+    uint iteration_times;
+    uint voxel_id = RayMarch(bounding_box, ray, hitpoint, hitbox, iteration_times);
+    float iteration = float(iteration_times) / float(MAX_ITERATION_VALUE); // 0 to 1
+
+    #ifndef MYMATERIAL_ALWAYS_BLUE
+    f_color = vec4(iteration, iteration, iteration, 1.0);
+    #else
 
     vec3 normal = cubed_normalize(hitpoint - (hitbox.xyz + hitbox.w/2));
     vec2 texcoords = vec2(
@@ -216,30 +232,6 @@ void main() {
     vec4 output_color;
     uint diffuse_texture_id;
     float scale;
-    if (voxel_id == 0) {
-        return;
-    } else if ((voxel_id & 0x8000) == 0) {
-        // regular
-        uint material_id = voxel_id - 1;
-        diffuse_texture_id = uint(regularMaterials[material_id].diffuse);
-        output_color = vec4(1.0, 1.0, 1.0, 1.0);
-        scale = regularMaterials[material_id].scale;
-    } else {
-        // colored
-        uint material_id = (voxel_id >> 8) & 0x7f;
-        uint color = voxel_id & 0xff;
-        diffuse_texture_id = uint(coloredMaterials[material_id].diffuse);
-        output_color = coloredMaterials[material_id].palette[color];
-        scale = coloredMaterials[material_id].scale;
-    }
-
-    if (diffuse_texture_id > 0) {
-        output_color *= texture(
-            sampler2DArray(TextureRepo,  TextureRepoSampler),
-            vec3(texcoords * scale, diffuse_texture_id-1)
-        );
-    }
-
 
     // Calculate ambient
     vec3 light_color = AmbientLightColor.rgb;
@@ -260,7 +252,35 @@ void main() {
     }
 
 
-    output_color.xyz *= light_color;
-    f_color = output_color;
-    return;
+    if (voxel_id == 0) {
+        output_color = vec4(1.0, 1.0, 1.0, 1.0);
+        diffuse_texture_id = 0;
+    } else if ((voxel_id & 0x8000) == 0) {
+        // regular
+        uint material_id = voxel_id - 1;
+        diffuse_texture_id = uint(regularMaterials[material_id].diffuse);
+        output_color = vec4(1.0, 1.0, 1.0, 1.0);
+        scale = regularMaterials[material_id].scale;
+        output_color.xyz *= light_color;
+    } else {
+        // colored
+        uint material_id = (voxel_id >> 8) & 0x7f;
+        uint color = voxel_id & 0xff;
+        diffuse_texture_id = uint(coloredMaterials[material_id].diffuse);
+        output_color = coloredMaterials[material_id].palette[color];
+        scale = coloredMaterials[material_id].scale;
+        output_color.xyz *= light_color;
+    }
+
+    if (diffuse_texture_id > 0) {
+        output_color *= texture(
+            sampler2DArray(TextureRepo,  TextureRepoSampler),
+            vec3(texcoords * scale, diffuse_texture_id-1)
+        );
+    }
+
+
+    float ray_fog_factor = exp2(iteration * 18 - 18); // 0 for near, 1 for far
+    f_color = output_color * (1 - ray_fog_factor);
+    #endif
 }
