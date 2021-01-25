@@ -3,14 +3,12 @@
 #extension GL_EXT_shader_8bit_storage : require
 
 layout(location=0) out vec4 f_color;
-
+layout(location=0) in vec3 vWorldPosition;
 struct PerspectiveProjection {
     float fov;
     float aspect_ratio;
     float near;
     float far;
-    vec2 dimensions;
-    vec2 _padding;
 };
 
 struct Node {
@@ -76,19 +74,9 @@ struct Ray {
 };
 
 Ray generate_ray() {
-    vec2 pixel_ndc = gl_FragCoord.xy / projection.dimensions;
-    vec2 pixel_screen = pixel_ndc * 2 - 1;
-    vec2 pixel = pixel_screen * tan(projection.fov / 2);
-    pixel.x *= projection.aspect_ratio;
-    pixel.y *= -1;
-
-    vec4 pixel_camera_space = vec4(pixel, -1, 1.0);
-    vec4 pixel_world_space_homo = transform * pixel_camera_space;
-    vec3 pixel_world_space = pixel_world_space_homo.xyz / pixel_world_space_homo.w;
-
     Ray ray;
     ray.origin = transform[3].xyz;
-    ray.dir = normalize(pixel_world_space - ray.origin);
+    ray.dir = normalize(vWorldPosition - ray.origin);
     return ray;
 }
 vec2 intersectAABB(vec3 origin, vec3 dir, vec4 box) {
@@ -220,7 +208,7 @@ void main() {
     uint voxel_id = RayMarch(bounding_box, ray, hitpoint, hitbox, iteration_times);
     float iteration = float(iteration_times) / float(MAX_ITERATION_VALUE); // 0 to 1
 
-    #ifndef MYMATERIAL_ALWAYS_BLUE
+    #ifdef MATERIAL_DEBUG
     f_color = vec4(iteration, iteration, iteration, 1.0);
     #else
 

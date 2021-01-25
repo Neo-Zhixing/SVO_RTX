@@ -1,6 +1,6 @@
 use bevy::core::AsBytes;
 use bevy::prelude::*;
-use bevy::render::camera::{ActiveCameras, Camera, PerspectiveProjection};
+use bevy::render::camera::{ActiveCameras, PerspectiveProjection};
 use bevy::render::render_graph::Node;
 use bevy::render::render_graph::{CommandQueue, ResourceSlots, SystemNode};
 use bevy::render::renderer::{
@@ -71,29 +71,25 @@ pub fn projection_node_system(
     // PERF: this write on RenderResourceAssignments will prevent this system from running in parallel
     // with other systems that do the same
     mut render_resource_bindings: ResMut<RenderResourceBindings>,
-    windows: Res<Windows>,
-    query: Query<(&GlobalTransform, &PerspectiveProjection, &Camera)>,
+    query: Query<(&GlobalTransform, &PerspectiveProjection)>,
 ) {
     let render_resource_context = &**render_resource_context;
 
-    let (global_transform, perspective_projection, camera) =
+    let (global_transform, perspective_projection) =
         if let Some(entity) = active_cameras.get(&state.camera_name) {
             query.get(entity).unwrap()
         } else {
             return;
         };
 
-    let window = windows.get(camera.window).unwrap();
-
-    let data_size = std::mem::size_of::<[f32; 22]>();
-    let data_size_padded = std::mem::size_of::<[f32; 24]>();
+    let data_size = std::mem::size_of::<[f32; 20]>();
 
     let staging_buffer = if let Some(staging_buffer) = state.staging_buffer {
         render_resource_context.map_buffer(staging_buffer);
         staging_buffer
     } else {
         let buffer = render_resource_context.create_buffer(BufferInfo {
-            size: data_size_padded,
+            size: data_size,
             buffer_usage: BufferUsage::COPY_DST | BufferUsage::UNIFORM,
             mapped_at_creation: false,
         });
@@ -101,7 +97,7 @@ pub fn projection_node_system(
             &(state.camera_name.to_owned() + "Projection"),
             RenderResourceBinding::Buffer {
                 buffer,
-                range: 0..data_size_padded as u64,
+                range: 0..data_size as u64,
                 dynamic_index: None,
             },
         );
@@ -117,13 +113,11 @@ pub fn projection_node_system(
         staging_buffer
     };
 
-    let projection_data: [f32; 6] = [
+    let projection_data: [f32; 4] = [
         perspective_projection.fov,
         perspective_projection.aspect_ratio,
         perspective_projection.near,
         perspective_projection.far,
-        window.physical_width() as f32,
-        window.physical_height() as f32,
     ];
     let transform_data: [f32; 16] = global_transform.compute_matrix().to_cols_array();
 

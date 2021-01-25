@@ -13,6 +13,7 @@ struct Node {
 
 
 layout(location=0) in vec3 Vertex_Position;
+layout(location=0) out vec3 vWorldPosition;
 
 layout(set = 0, binding = 0) uniform Camera {
     mat4 ViewProj;
@@ -24,6 +25,6 @@ layout(set = 2, binding = 0) readonly buffer Chunk {
 };
 
 void main() {
-    vec3 transformed_position = Vertex_Position * bounding_box.w + bounding_box.xyz;;
-    gl_Position = ViewProj * vec4(transformed_position, 1.0);
+    vWorldPosition = Vertex_Position * bounding_box.w + bounding_box.xyz;
+    gl_Position = ViewProj * vec4(vWorldPosition, 1.0);
 }
