@@ -2,10 +2,7 @@ use crate::lights::{AmbientLight, PointLight, SunLight};
 use bevy::core::AsBytes;
 use bevy::prelude::*;
 use bevy::render::render_graph::{CommandQueue, Node, ResourceSlots, SystemNode};
-use bevy::render::renderer::{
-    BufferId, BufferInfo, BufferUsage, RenderContext, RenderResourceBinding,
-    RenderResourceBindings, RenderResourceContext,
-};
+use bevy::render::renderer::{BufferId, BufferInfo, BufferUsage, RenderContext, RenderResourceBinding, RenderResourceBindings, RenderResourceContext, BufferMapMode};
 
 const LIGHTS: &str = "Lights";
 /// A Render Graph [Node] that write light data from the ECS to GPU buffers
@@ -83,7 +80,7 @@ pub fn lights_node_system(
         + std::mem::size_of::<PointLight>() * state.max_lights;
 
     if let Some(staging_buffer) = state.staging_buffer {
-        render_resource_context.map_buffer(staging_buffer);
+        render_resource_context.map_buffer(staging_buffer, BufferMapMode::Write);
     } else {
         let buffer = render_resource_context.create_buffer(BufferInfo {
             size: max_light_uniform_size,

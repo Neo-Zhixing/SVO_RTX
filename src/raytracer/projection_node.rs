@@ -3,10 +3,7 @@ use bevy::prelude::*;
 use bevy::render::camera::{ActiveCameras, PerspectiveProjection};
 use bevy::render::render_graph::Node;
 use bevy::render::render_graph::{CommandQueue, ResourceSlots, SystemNode};
-use bevy::render::renderer::{
-    BufferId, BufferInfo, BufferUsage, RenderContext, RenderResourceBinding,
-    RenderResourceBindings, RenderResourceContext,
-};
+use bevy::render::renderer::{BufferId, BufferInfo, BufferUsage, RenderContext, RenderResourceBinding, RenderResourceBindings, RenderResourceContext, BufferMapMode};
 use std::borrow::Cow;
 
 #[derive(Debug)]
@@ -85,7 +82,7 @@ pub fn projection_node_system(
     let data_size = std::mem::size_of::<[f32; 20]>();
 
     let staging_buffer = if let Some(staging_buffer) = state.staging_buffer {
-        render_resource_context.map_buffer(staging_buffer);
+        render_resource_context.map_buffer(staging_buffer, BufferMapMode::Write);
         staging_buffer
     } else {
         let buffer = render_resource_context.create_buffer(BufferInfo {

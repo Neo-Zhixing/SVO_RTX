@@ -7,6 +7,7 @@ use bevy::render::render_graph::{CommandQueue, ResourceSlots, SystemNode};
 use bevy::render::renderer::{
     BufferInfo, BufferUsage, RenderContext, RenderResourceBinding, RenderResourceContext,
 };
+use bevy::app::ManualEventReader;
 
 #[derive(Debug)]
 pub struct MaterialNode {
@@ -51,7 +52,7 @@ impl SystemNode for MaterialNode {
 #[derive(Default)]
 pub struct MaterialNodeState {
     command_queue: CommandQueue,
-    pub event_reader: EventReader<AssetEvent<MaterialPalette>>,
+    pub event_reader: ManualEventReader<AssetEvent<MaterialPalette>>,
 }
 
 pub fn material_node_system(

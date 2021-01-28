@@ -8,7 +8,7 @@ edition = "2018"
 
 [dependencies]
 glam = "*"
-bevy_fly_camera = "0.6"
+bevy_fly_camera = { path = "../bevy_fly_camera" }
 svo = "*"
 image = "0.23.12"
 wgpu = "*"
@@ -19,22 +19,4 @@ fastnbt = "0.14.0"
 fastanvil = "0.14.1"
 
 [dependencies.bevy]
-version = "0.4"
-features = [
-    "bevy_audio",
-    "bevy_dynamic_plugin",
-    "bevy_gilrs",
-    "bevy_gltf",
-    "bevy_wgpu",
-    "bevy_winit",
-    "render",
-    "png",
-    "jpeg",
-    #"hdr",
-    #"mp3",
-    "x11",
-]
-
-
-[patch.crates-io]
-bevy = { git = "https://github.com/bevyengine/bevy.git" }
+path = "../bevy"
