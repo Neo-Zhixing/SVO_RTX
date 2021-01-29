@@ -5,7 +5,7 @@ use bevy::prelude::*;
 use bevy_fly_camera::{FlyCamera, FlyCameraPlugin};
 use ray_tracing::lights::SunLight;
 use ray_tracing::material::texture_repo::TextureRepo;
-use ray_tracing::material::{ColoredMaterial, MaterialPalette, DEFAULT_MATERIAL_PALETTE_HANDLE};
+use ray_tracing::material::{ColoredMaterial, MaterialPalette, DEFAULT_MATERIAL_PALETTE_HANDLE, Material};
 use ray_tracing::raytracer::chunk::{Chunk, ChunkBundle};
 use ray_tracing::OctreeRayTracerPlugin;
 use ray_tracing::Voxel;
@@ -67,6 +67,12 @@ fn setup(
         colored_material.color_palette[i] = color;
     }
     let colored_voxel = palette.add_colored_material(colored_material);
+    palette.add_material(Material {
+        name: "".into(),
+        scale: 0.0,
+        diffuse: None,
+        normal: None
+    });
     for voxel in &model.voxels {
         octree.set(
             voxel.x as u32,

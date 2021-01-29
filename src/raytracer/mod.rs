@@ -6,7 +6,6 @@ use crate::material::texture_repo_node::TextureRepoNode;
 use crate::material::{MaterialPalette, DEFAULT_MATERIAL_PALETTE_HANDLE};
 use crate::raytracer::chunk::Chunk;
 use crate::raytracer::chunk_node::ChunkNode;
-use crate::raytracer::projection_node::CameraProjectionNode;
 
 use bevy::prelude::*;
 use bevy::reflect::TypeUuid;
@@ -16,16 +15,20 @@ use bevy::render::pass::{
     LoadOp, Operations, PassDescriptor, RenderPassColorAttachmentDescriptor,
     RenderPassDepthStencilAttachmentDescriptor, TextureAttachment,
 };
-use bevy::render::pipeline::{BlendDescriptor, BlendFactor, BlendOperation, ColorStateDescriptor, ColorWrite, CompareFunction, CullMode, DepthStencilStateDescriptor, FrontFace, IndexFormat, PipelineDescriptor, PrimitiveTopology, RasterizationStateDescriptor, StencilStateDescriptor, StencilStateFaceDescriptor, PolygonMode};
+use bevy::render::pipeline::{
+    BlendDescriptor, BlendFactor, BlendOperation, ColorStateDescriptor, ColorWrite,
+    CompareFunction, CullMode, DepthStencilStateDescriptor, FrontFace, IndexFormat,
+    PipelineDescriptor, PrimitiveTopology, RasterizationStateDescriptor, StencilStateDescriptor,
+    StencilStateFaceDescriptor,
+};
 use bevy::render::render_graph::base as base_render_graph;
 use bevy::render::render_graph::{PassNode, RenderGraph, WindowSwapChainNode, WindowTextureNode};
 
-use bevy::render::shader::ShaderStages;
+use bevy::render::shader::{ShaderStages, ShaderStage};
 use bevy::render::texture::TextureFormat;
 
 pub mod chunk;
 pub mod chunk_node;
-pub mod projection_node;
 
 pub const RAY_PIPELINE_HANDLE: HandleUntyped =
     HandleUntyped::weak_from_u64(PipelineDescriptor::TYPE_UUID, 0x786f7ab62875ebbc);
@@ -42,7 +45,6 @@ pub struct RayPass;
 
 pub mod node {
     pub const RAY_PASS: &str = "ray_pass";
-    pub const PROJECTION_NODE: &str = "ray_projection_node";
     pub const OCTREE_CHUNK_NODE: &str = "octree_chunk_node";
     pub const LIGHT_NODE: &str = "light_node";
     pub const TEXTURE_REPO: &str = "texture_repo_node";
@@ -77,13 +79,6 @@ impl Plugin for OctreeRayTracerPlugin {
             ray_pass_node.use_default_clear_color(0);
             ray_pass_node.add_camera(base_render_graph::camera::CAMERA_3D);
             render_graph.add_node(node::RAY_PASS, ray_pass_node);
-            render_graph.add_system_node(
-                node::PROJECTION_NODE,
-                CameraProjectionNode::new(base_render_graph::camera::CAMERA_3D),
-            );
-            render_graph
-                .add_node_edge(node::PROJECTION_NODE, node::RAY_PASS)
-                .unwrap();
             render_graph
                 .add_node_edge(base_render_graph::node::TEXTURE_COPY, node::RAY_PASS)
                 .unwrap();
@@ -179,9 +174,8 @@ impl Plugin for OctreeRayTracerPlugin {
             let mut palettes = resources.get_mut::<Assets<MaterialPalette>>().unwrap();
             palettes.set_untracked(DEFAULT_MATERIAL_PALETTE_HANDLE, MaterialPalette::new())
         }
-        let asset_server = resources.get_mut::<AssetServer>().unwrap();
+        let mut shaders = resources.get_mut::<Assets<Shader>>().unwrap();
 
-        asset_server.watch_for_changes().unwrap();
         let mut pipelines = resources.get_mut::<Assets<PipelineDescriptor>>().unwrap();
         pipelines.set_untracked(
             RAY_PIPELINE_HANDLE,
@@ -194,7 +188,7 @@ impl Plugin for OctreeRayTracerPlugin {
                 sample_mask: !0,
                 alpha_to_coverage_enabled: false,
                 rasterization_state: Some(RasterizationStateDescriptor {
-                    polygon_mode: PolygonMode::Fill,
+                    polygon_mode: Default::default(),
                     front_face: FrontFace::Cw,
                     cull_mode: CullMode::Front,
                     depth_bias: 0,
@@ -228,8 +222,14 @@ impl Plugin for OctreeRayTracerPlugin {
                     write_mask: ColorWrite::ALL,
                 }],
                 shader_stages: ShaderStages {
-                    vertex: asset_server.load::<Shader, _>("shaders/ray.vert"),
-                    fragment: Some(asset_server.load::<Shader, _>("shaders/ray.frag")),
+                    vertex: shaders.add(Shader::from_glsl(
+                        ShaderStage::Vertex,
+                        include_str!("../../assets/shaders/ray.vert"),
+                    )),
+                    fragment: Some(shaders.add(Shader::from_glsl(
+                        ShaderStage::Fragment,
+                        include_str!("../../assets/shaders/ray.frag"),
+                    ))),
                 },
             },
         );

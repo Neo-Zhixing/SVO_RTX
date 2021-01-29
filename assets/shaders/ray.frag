@@ -21,19 +21,16 @@ struct Node {
 
 layout(set = 0, binding = 0) uniform Camera {
     mat4 ViewProj;
+    mat4 transform;
 };
 
 struct PointLight {
     vec4 Color;
     vec4 pos;
 };
-layout(set = 1, binding = 0) uniform Camera3dProjection {
-    mat4 transform;
-    PerspectiveProjection projection;
-};
-layout(set = 1, binding = 1) uniform texture2DArray TextureRepo;
-layout(set = 1, binding = 2) uniform sampler TextureRepoSampler;
-layout(set = 1, binding = 3) uniform Lights {
+layout(set = 1, binding = 0) uniform texture2DArray TextureRepo;
+layout(set = 1, binding = 1) uniform sampler TextureRepoSampler;
+layout(set = 1, binding = 2) uniform Lights {
     vec4 AmbientLightColor;
     vec4 SunLightColor;
     vec3 SunLightDir;
