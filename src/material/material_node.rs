@@ -8,7 +8,9 @@ use bevy::render::renderer::{
     BufferInfo, BufferUsage, RenderContext, RenderResourceBinding, RenderResourceContext,
 };
 use bevy::app::ManualEventReader;
+use bevy::wgpu::renderer::BIND_BUFFER_ALIGNMENT;
 
+const COPY_BUFFER_ALIGNMENT: usize = 4;
 #[derive(Debug)]
 pub struct MaterialNode {
     command_queue: CommandQueue,
@@ -76,9 +78,9 @@ pub fn material_node_system(
 
                 let colored_materials_size = palette.colored_materials_size();
                 let colored_materials_size_aligned =
-                    align_to(colored_materials_size, wgpu::BIND_BUFFER_ALIGNMENT as usize);
+                    align_to(colored_materials_size, BIND_BUFFER_ALIGNMENT as usize);
                 let total_size = colored_materials_size_aligned + palette.materials_size();
-                let total_size_aligned = align_to(total_size, wgpu::COPY_BUFFER_ALIGNMENT as usize);
+                let total_size_aligned = align_to(total_size, COPY_BUFFER_ALIGNMENT as usize);
 
                 if palette.buffer.is_none() {
                     let staging_buffer = render_resource_context.create_buffer(BufferInfo {
@@ -134,9 +136,9 @@ pub fn material_node_system(
         let palette = palettes.get(palette_handle).unwrap();
         let colored_materials_size = palette.colored_materials_size();
         let colored_materials_size_aligned =
-            align_to(colored_materials_size, wgpu::BIND_BUFFER_ALIGNMENT as usize);
+            align_to(colored_materials_size, BIND_BUFFER_ALIGNMENT as usize);
         let total_size = colored_materials_size_aligned + palette.materials_size();
-        let total_size_aligned = align_to(total_size, wgpu::COPY_BUFFER_ALIGNMENT as usize);
+        let total_size_aligned = align_to(total_size, COPY_BUFFER_ALIGNMENT as usize);
         render_pipelines.bindings.set(
             "ColoredMaterials",
             RenderResourceBinding::Buffer {

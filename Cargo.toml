@@ -11,7 +11,6 @@ glam = "*"
 bevy_fly_camera = { path = "../bevy_fly_camera" }
 svo = "*"
 image = "0.23.12"
-wgpu = "*"
 
 [dev-dependencies]
 dot_vox = "4.1.0"
