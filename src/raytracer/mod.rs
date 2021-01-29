@@ -16,12 +16,7 @@ use bevy::render::pass::{
     LoadOp, Operations, PassDescriptor, RenderPassColorAttachmentDescriptor,
     RenderPassDepthStencilAttachmentDescriptor, TextureAttachment,
 };
-use bevy::render::pipeline::{
-    BlendDescriptor, BlendFactor, BlendOperation, ColorStateDescriptor, ColorWrite,
-    CompareFunction, CullMode, DepthStencilStateDescriptor, FrontFace, IndexFormat,
-    PipelineDescriptor, PrimitiveTopology, RasterizationStateDescriptor, StencilStateDescriptor,
-    StencilStateFaceDescriptor,
-};
+use bevy::render::pipeline::{BlendDescriptor, BlendFactor, BlendOperation, ColorStateDescriptor, ColorWrite, CompareFunction, CullMode, DepthStencilStateDescriptor, FrontFace, IndexFormat, PipelineDescriptor, PrimitiveTopology, RasterizationStateDescriptor, StencilStateDescriptor, StencilStateFaceDescriptor, PolygonMode};
 use bevy::render::render_graph::base as base_render_graph;
 use bevy::render::render_graph::{PassNode, RenderGraph, WindowSwapChainNode, WindowTextureNode};
 
@@ -194,11 +189,12 @@ impl Plugin for OctreeRayTracerPlugin {
                 name: Some("octree_raytracing_pipeline".into()),
                 primitive_topology: PrimitiveTopology::TriangleStrip,
                 layout: None,
-                index_format: IndexFormat::Uint16,
+                index_format: Some(IndexFormat::Uint16),
                 sample_count: 1,
                 sample_mask: !0,
                 alpha_to_coverage_enabled: false,
                 rasterization_state: Some(RasterizationStateDescriptor {
+                    polygon_mode: PolygonMode::Fill,
                     front_face: FrontFace::Cw,
                     cull_mode: CullMode::Front,
                     depth_bias: 0,

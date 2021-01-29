@@ -65,6 +65,7 @@ impl Node for TextureRepoNode {
                     lod_max_clamp: std::f32::MAX,
                     compare_function: None,
                     anisotropy_clamp: None,
+                    border_color: None,
                 });
             let mut render_resource_bindings =
                 resources.get_mut::<RenderResourceBindings>().unwrap();
