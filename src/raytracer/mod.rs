@@ -76,7 +76,6 @@ impl Plugin for OctreeRayTracerPlugin {
                 sample_count: 1,
             });
 
-            ray_pass_node.use_default_clear_color(0);
             ray_pass_node.add_camera(base_render_graph::camera::CAMERA_3D);
             render_graph.add_node(node::RAY_PASS, ray_pass_node);
             render_graph

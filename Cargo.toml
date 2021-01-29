@@ -8,14 +8,28 @@ edition = "2018"
 
 [dependencies]
 glam = "*"
-bevy_fly_camera = { path = "../bevy_fly_camera" }
-svo = "*"
+svo = { git = "https://github.com/Neo-Zhixing/svo" }
 image = "0.23.12"
+bevy_sky = { git = "https://github.com/Neo-Zhixing/bevy_sky" }
 
 [dev-dependencies]
 dot_vox = "4.1.0"
 fastnbt = "0.14.0"
 fastanvil = "0.14.1"
 
+[dependencies.bevy_fly_camera]
+git = "https://github.com/mcpar-land/bevy_fly_camera"
+branch = "post-0.4"
+
+
 [dependencies.bevy]
-path = "../bevy"
+git = "https://github.com/Neo-Zhixing/bevy"
+branch = "camera_transform_matrix"
+
+[patch."https://github.com/bevyengine/bevy".bevy]
+git = "https://github.com/Neo-Zhixing/bevy"
+branch = "camera_transform_matrix"
+
+[patch.crates-io.bevy]
+git = "https://github.com/Neo-Zhixing/bevy"
+branch = "camera_transform_matrix"

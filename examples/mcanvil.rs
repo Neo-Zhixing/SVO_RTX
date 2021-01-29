@@ -13,6 +13,7 @@ use ray_tracing::raytracer::chunk::{Chunk, ChunkBundle};
 use ray_tracing::OctreeRayTracerPlugin;
 use ray_tracing::Voxel;
 use svo::octree::Octree;
+use bevy_sky::SkyPlugin;
 
 /// This example illustrates how to load shaders such that they can be
 /// edited while the example is still running.
@@ -38,6 +39,7 @@ fn main() {
         .add_startup_system(setup.system())
         .add_resource(TextureRepo::new(512, 512))
         .add_plugin(OctreeRayTracerPlugin::default())
+        .add_plugin(SkyPlugin)
         .add_system(my_system.system())
         .run();
 }
