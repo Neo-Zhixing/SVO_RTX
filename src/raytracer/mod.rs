@@ -16,15 +16,15 @@ use bevy::render::pass::{
     RenderPassDepthStencilAttachmentDescriptor, TextureAttachment,
 };
 use bevy::render::pipeline::{
-    BlendDescriptor, BlendFactor, BlendOperation, ColorStateDescriptor, ColorWrite,
-    CompareFunction, CullMode, DepthStencilStateDescriptor, FrontFace, IndexFormat,
-    PipelineDescriptor, PrimitiveTopology, RasterizationStateDescriptor, StencilStateDescriptor,
-    StencilStateFaceDescriptor,
+    BlendFactor, BlendOperation, BlendState, ColorTargetState, ColorWrite, CompareFunction,
+    CullMode, DepthBiasState, DepthStencilState, FrontFace, IndexFormat, MultisampleState,
+    PipelineDescriptor, PolygonMode, PrimitiveState, PrimitiveTopology, StencilFaceState,
+    StencilState,
 };
 use bevy::render::render_graph::base as base_render_graph;
 use bevy::render::render_graph::{PassNode, RenderGraph, WindowSwapChainNode, WindowTextureNode};
 
-use bevy::render::shader::{ShaderStages, ShaderStage};
+use bevy::render::shader::{ShaderStage, ShaderStages};
 use bevy::render::texture::TextureFormat;
 
 pub mod chunk;
@@ -180,40 +180,16 @@ impl Plugin for OctreeRayTracerPlugin {
             RAY_PIPELINE_HANDLE,
             PipelineDescriptor {
                 name: Some("octree_raytracing_pipeline".into()),
-                primitive_topology: PrimitiveTopology::TriangleStrip,
                 layout: None,
                 index_format: Some(IndexFormat::Uint16),
-                sample_count: 1,
-                sample_mask: !0,
-                alpha_to_coverage_enabled: false,
-                rasterization_state: Some(RasterizationStateDescriptor {
-                    polygon_mode: Default::default(),
-                    front_face: FrontFace::Cw,
-                    cull_mode: CullMode::Front,
-                    depth_bias: 0,
-                    depth_bias_slope_scale: 0.0,
-                    depth_bias_clamp: 0.0,
-                    clamp_depth: false,
-                }),
-                depth_stencil_state: Some(DepthStencilStateDescriptor {
-                    format: TextureFormat::Depth32Float,
-                    depth_write_enabled: true,
-                    depth_compare: CompareFunction::Less,
-                    stencil: StencilStateDescriptor {
-                        front: StencilStateFaceDescriptor::IGNORE,
-                        back: StencilStateFaceDescriptor::IGNORE,
-                        read_mask: 0,
-                        write_mask: 0,
-                    },
-                }),
-                color_states: vec![ColorStateDescriptor {
+                color_target_states: vec![ColorTargetState {
                     format: TextureFormat::default(),
-                    color_blend: BlendDescriptor {
+                    color_blend: BlendState {
                         src_factor: BlendFactor::SrcAlpha,
                         dst_factor: BlendFactor::OneMinusSrcAlpha,
                         operation: BlendOperation::Add,
                     },
-                    alpha_blend: BlendDescriptor {
+                    alpha_blend: BlendState {
                         src_factor: BlendFactor::One,
                         dst_factor: BlendFactor::One,
                         operation: BlendOperation::Add,
@@ -229,6 +205,35 @@ impl Plugin for OctreeRayTracerPlugin {
                         ShaderStage::Fragment,
                         include_str!("../../assets/shaders/ray.frag"),
                     ))),
+                },
+                primitive: PrimitiveState {
+                    topology: PrimitiveTopology::TriangleStrip,
+                    strip_index_format: Some(IndexFormat::Uint16),
+                    front_face: FrontFace::Cw,
+                    cull_mode: CullMode::Front,
+                    polygon_mode: PolygonMode::Fill,
+                },
+                depth_stencil: Some(DepthStencilState {
+                    format: TextureFormat::Depth32Float,
+                    depth_write_enabled: true,
+                    depth_compare: CompareFunction::Less,
+                    stencil: StencilState {
+                        front: StencilFaceState::IGNORE,
+                        back: StencilFaceState::IGNORE,
+                        read_mask: 0,
+                        write_mask: 0,
+                    },
+                    bias: DepthBiasState {
+                        constant: 0,
+                        slope_scale: 0.0,
+                        clamp: 0.0,
+                    },
+                    clamp_depth: false,
+                }),
+                multisample: MultisampleState {
+                    count: 1,
+                    mask: !0,
+                    alpha_to_coverage_enabled: false,
                 },
             },
         );

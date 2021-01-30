@@ -4,6 +4,7 @@ use bevy::render::camera::PerspectiveProjection;
 use bevy::log::LogPlugin;
 use bevy::prelude::*;
 use bevy_fly_camera::{FlyCamera, FlyCameraPlugin};
+use bevy_sky::SkyPlugin;
 use ray_tracing::lights::SunLight;
 use ray_tracing::material::texture_repo::TextureRepo;
 use ray_tracing::material::{
@@ -13,7 +14,6 @@ use ray_tracing::raytracer::chunk::{Chunk, ChunkBundle};
 use ray_tracing::OctreeRayTracerPlugin;
 use ray_tracing::Voxel;
 use svo::octree::Octree;
-use bevy_sky::SkyPlugin;
 
 /// This example illustrates how to load shaders such that they can be
 /// edited while the example is still running.

@@ -5,11 +5,14 @@ use bevy::prelude::*;
 use bevy_fly_camera::{FlyCamera, FlyCameraPlugin};
 use ray_tracing::lights::SunLight;
 use ray_tracing::material::texture_repo::TextureRepo;
-use ray_tracing::material::{ColoredMaterial, MaterialPalette, DEFAULT_MATERIAL_PALETTE_HANDLE, Material};
+use ray_tracing::material::{
+    ColoredMaterial, Material, MaterialPalette, DEFAULT_MATERIAL_PALETTE_HANDLE,
+};
 use ray_tracing::raytracer::chunk::{Chunk, ChunkBundle};
 use ray_tracing::OctreeRayTracerPlugin;
 use ray_tracing::Voxel;
 use svo::octree::Octree;
+use bevy_sky::SkyPlugin;
 
 /// This example illustrates how to load shaders such that they can be
 /// edited while the example is still running.
@@ -30,6 +33,7 @@ fn main() {
         .add_plugin(FrameTimeDiagnosticsPlugin::default())
         // Custom plugins
         .add_plugin(FlyCameraPlugin)
+        .add_plugin(SkyPlugin)
         .add_startup_system(setup.system())
         .add_resource(TextureRepo::new(512, 512))
         .add_plugin(OctreeRayTracerPlugin::default())
@@ -71,7 +75,7 @@ fn setup(
         name: "".into(),
         scale: 0.0,
         diffuse: None,
-        normal: None
+        normal: None,
     });
     for voxel in &model.voxels {
         octree.set(

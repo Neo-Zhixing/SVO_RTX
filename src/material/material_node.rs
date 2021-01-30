@@ -2,12 +2,12 @@ use crate::material::MaterialPalette;
 
 use bevy::prelude::*;
 
+use bevy::app::ManualEventReader;
 use bevy::render::render_graph::Node;
 use bevy::render::render_graph::{CommandQueue, ResourceSlots, SystemNode};
 use bevy::render::renderer::{
     BufferInfo, BufferUsage, RenderContext, RenderResourceBinding, RenderResourceContext,
 };
-use bevy::app::ManualEventReader;
 use bevy::wgpu::renderer::BIND_BUFFER_ALIGNMENT;
 
 const COPY_BUFFER_ALIGNMENT: usize = 4;

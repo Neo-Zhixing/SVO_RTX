@@ -2,7 +2,10 @@ use crate::lights::{AmbientLight, PointLight, SunLight};
 use bevy::core::AsBytes;
 use bevy::prelude::*;
 use bevy::render::render_graph::{CommandQueue, Node, ResourceSlots, SystemNode};
-use bevy::render::renderer::{BufferId, BufferInfo, BufferUsage, RenderContext, RenderResourceBinding, RenderResourceBindings, RenderResourceContext, BufferMapMode};
+use bevy::render::renderer::{
+    BufferId, BufferInfo, BufferMapMode, BufferUsage, RenderContext, RenderResourceBinding,
+    RenderResourceBindings, RenderResourceContext,
+};
 
 const LIGHTS: &str = "Lights";
 /// A Render Graph [Node] that write light data from the ECS to GPU buffers
