@@ -35,7 +35,7 @@ fn main() {
         .add_plugin(FlyCameraPlugin)
         .add_plugin(SkyPlugin)
         .add_startup_system(setup.system())
-        .add_resource(TextureRepo::new(512, 512))
+        .insert_resource(TextureRepo::new(512, 512))
         .add_plugin(OctreeRayTracerPlugin::default())
         .add_system(my_system.system())
         .run();
@@ -92,7 +92,7 @@ fn setup(
     let chunk_handle = chunks.add(chunk);
     commands
         .spawn(ChunkBundle::new(chunk_handle))
-        .spawn(Camera3dBundle {
+        .spawn(PerspectiveCameraBundle {
             transform: Transform::from_translation(Vec3::new(0.0, 0.0, 10.0))
                 .looking_at(Vec3::default(), Vec3::unit_y()),
             perspective_projection: PerspectiveProjection {

@@ -160,10 +160,10 @@ impl Plugin for OctreeRayTracerPlugin {
         };
         app.add_asset::<Chunk>()
             .add_asset::<MaterialPalette>()
-            .add_resource(AmbientLight {
+            .insert_resource(AmbientLight {
                 color: Color::rgb_linear(0.2, 0.2, 0.2),
             })
-            .add_resource(SunLight {
+            .insert_resource(SunLight {
                 color: Color::rgb_linear(0.8, 0.8, 0.8),
                 direction: Vec3::new(0.5, 0.5, 0.5).normalize(),
             });
@@ -181,7 +181,6 @@ impl Plugin for OctreeRayTracerPlugin {
             PipelineDescriptor {
                 name: Some("octree_raytracing_pipeline".into()),
                 layout: None,
-                index_format: Some(IndexFormat::Uint16),
                 color_target_states: vec![ColorTargetState {
                     format: TextureFormat::default(),
                     color_blend: BlendState {

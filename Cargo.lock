@@ -586,7 +586,7 @@ dependencies = [
 [[package]]
 name = "bevy_sky"
 version = "0.1.0"
-source = "git+https://github.com/Neo-Zhixing/bevy_sky#d6317a784361b7ae4da5d0a05a236da3ac3740e5"
+source = "git+https://github.com/Neo-Zhixing/bevy_sky#ca9cb2f69279ec3776d193206fa27d4eaabdce21"
 dependencies = [
  "bevy",
 ]

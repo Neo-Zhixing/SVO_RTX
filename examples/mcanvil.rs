@@ -37,7 +37,7 @@ fn main() {
         // Custom plugins
         .add_plugin(FlyCameraPlugin)
         .add_startup_system(setup.system())
-        .add_resource(TextureRepo::new(512, 512))
+        .insert_resource(TextureRepo::new(512, 512))
         .add_plugin(OctreeRayTracerPlugin::default())
         .add_plugin(SkyPlugin)
         .add_system(my_system.system())
@@ -200,7 +200,7 @@ fn setup(
     load_region(1, 0);
     load_region(0, 0);
     commands
-        .spawn(Camera3dBundle {
+        .spawn(PerspectiveCameraBundle {
             transform: Transform::from_translation(Vec3::new(0.0, 0.0, 10.0))
                 .looking_at(Vec3::default(), Vec3::unit_y()),
             perspective_projection: PerspectiveProjection {
