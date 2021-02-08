@@ -37,7 +37,7 @@ layout(set = 1, binding = 2) uniform Lights {
     uint PointLightCount;
     PointLight lights[];
 };
-layout (constant_id = 0) const uint MAX_ITERATION_VALUE = 100;
+layout (constant_id = 0) const uint MAX_ITERATION_VALUE = 1000;
 
 layout(set = 2, binding = 0) readonly buffer Chunk {
     vec4 bounding_box;
@@ -219,22 +219,22 @@ void main() {
     float scale;
 
     // Calculate ambient
-    vec3 light_color = AmbientLightColor.rgb;
+    // vec3 light_color = AmbientLightColor.rgb;
 
     // Test Sunlight
-    Ray light_ray;
-    light_ray.dir = -SunLightDir;
-    light_ray.origin = hitpoint + sign(light_ray.dir) * hitbox.w * 0.01;
-    float sun_light_factor = max(0.0, dot(normal, SunLightDir));
-    if (sun_light_factor > 0.05) {
-        // so that the angle between the light and the surface is not too small
-        // when the angle is small, ray tracing it in the octree costs more
-        if (!RayMarchTest(bounding_box, light_ray)) {
-            // Not occluded
-            // Add Sunlight
-            light_color += sun_light_factor * SunLightColor.rgb;
-        }
-    }
+    // Ray light_ray;
+    // light_ray.dir = -SunLightDir;
+    // light_ray.origin = hitpoint + sign(light_ray.dir) * hitbox.w * 0.01;
+    // float sun_light_factor = max(0.0, dot(normal, SunLightDir));
+    // if (sun_light_factor > 0.05) {
+    //     // so that the angle between the light and the surface is not too small
+    //     // when the angle is small, ray tracing it in the octree costs more
+    //     if (!RayMarchTest(bounding_box, light_ray)) {
+    //         // Not occluded
+    //         // Add Sunlight
+    //         light_color += sun_light_factor * SunLightColor.rgb;
+    //     }
+    // }
 
 
     if (voxel_id == 0) {
@@ -246,7 +246,6 @@ void main() {
         diffuse_texture_id = uint(regularMaterials[material_id].diffuse);
         output_color = vec4(1.0, 1.0, 1.0, 1.0);
         scale = regularMaterials[material_id].scale;
-        output_color.xyz *= light_color;
     } else {
         // colored
         uint material_id = (voxel_id >> 8) & 0x7f;
@@ -254,7 +253,6 @@ void main() {
         diffuse_texture_id = uint(coloredMaterials[material_id].diffuse);
         output_color = coloredMaterials[material_id].palette[color];
         scale = coloredMaterials[material_id].scale;
-        output_color.xyz *= light_color;
     }
 
     if (diffuse_texture_id > 0) {

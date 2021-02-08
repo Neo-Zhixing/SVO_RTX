@@ -16,8 +16,7 @@ bevy_sky = { git = "https://github.com/Neo-Zhixing/bevy_sky" }
 dot_vox = "4.1.0"
 fastnbt = "0.14.0"
 fastanvil = "0.14.1"
-
-[dependencies.bevy_fly_camera]
+[dev-dependencies.bevy_fly_camera]
 git = "https://github.com/mcpar-land/bevy_fly_camera"
 branch = "post-0.4"
 
