@@ -1,7 +1,9 @@
 #version 460
 #extension GL_EXT_shader_16bit_storage : require
 #extension GL_EXT_shader_8bit_storage : require
+#extension GL_ARB_shader_image_load_store : require
 
+layout(early_fragment_tests) in;
 layout(location=0) out vec4 f_color;
 layout(location=0) in vec3 vWorldPosition;
 struct PerspectiveProjection {
@@ -146,7 +148,7 @@ uint RayMarch(vec4 initial_box, Ray ray, out vec3 hitpoint, out vec4 hitbox, out
     uint counter;
     for(counter = 0;; counter++) {
         vec4 entry_point_camera_space = ViewProj * vec4(entry_point, 1.0);
-        gl_FragDepth = ((entry_point_camera_space.z/entry_point_camera_space.w) + 1.0) * 0.5;
+        //gl_FragDepth = ((entry_point_camera_space.z/entry_point_camera_space.w) + 1.0) * 0.5;
         if (counter >= MAX_ITERATION_VALUE) {
             // Ray tracing failed
             break;
