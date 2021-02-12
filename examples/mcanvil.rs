@@ -117,12 +117,13 @@ fn setup(
 
     let args: Vec<_> = std::env::args().skip(1).collect();
     assert_eq!(args.len(), 1, "Format: mcanvil <mca filepath>");
-    let mut octree: Octree<Voxel> = Octree::new();
+
     let mut load_region = |region_x: usize, region_y: usize| {
         let file =
             std::fs::File::open(format!("{}/r.{}.{}.mca", region_dir, region_x, region_y)).unwrap();
         let mut region = fastanvil::Region::new(file);
 
+        let mut octree: Octree<Voxel> = Octree::new();
         region
             .for_each_chunk(|chunk_x, chunk_z, chunk_data| {
                 println!("loading chunk {} {}", chunk_x, chunk_z);
@@ -175,10 +176,10 @@ fn setup(
                                     }
                                 };
                                 octree.set(
-                                    x + chunk_x as u32 * 16 + region_x as u32 * 512,
+                                    x + chunk_x as u32 * 16,
                                     y,
-                                    z + chunk_z as u32 * 16 + region_y as u32 * 512,
-                                    1024,
+                                    z + chunk_z as u32 * 16,
+                                    512,
                                     voxel,
                                 );
                             }
@@ -188,22 +189,16 @@ fn setup(
             })
             .unwrap();
 
+        let chunk = Chunk::new(
+            octree,
+            Vec4::new((region_x * 512) as f32, 0.0, (region_y * 512) as f32, 512.0),
+        );
+        let chunk_handle = chunks.add(chunk);
+        commands.spawn(ChunkBundle::new(chunk_handle));
     };
 
     load_region(1, 0);
     load_region(0, 0);
-    load_region(1, 1);
-    load_region(0, 1);
-
-
-    let chunk = Chunk::new(
-        octree,
-        Vec4::new(0.0, 0.0, 0.0, 1024.0),
-    );
-    let chunk_handle = chunks.add(chunk);
-    commands.spawn(ChunkBundle::new(chunk_handle));
-
-
     commands
         .spawn(PerspectiveCameraBundle {
             transform: Transform::from_translation(Vec3::new(0.0, 0.0, 10.0))
