@@ -25,10 +25,14 @@ use bevy::render::render_graph::base as base_render_graph;
 use bevy::render::render_graph::{PassNode, RenderGraph, WindowSwapChainNode, WindowTextureNode};
 
 use bevy::render::shader::{ShaderStage, ShaderStages};
-use bevy::render::texture::TextureFormat;
+use bevy::render::texture::{TextureFormat, TextureDescriptor, Extent3d, TextureDimension, TextureUsage};
+use crate::raytracer::sequencing_node::SequencingNode;
+use bevy::window::WindowId;
+use bevy::render::renderer::RenderResourceType;
 
 pub mod chunk;
 pub mod chunk_node;
+mod sequencing_node;
 
 pub const RAY_PIPELINE_HANDLE: HandleUntyped =
     HandleUntyped::weak_from_u64(PipelineDescriptor::TYPE_UUID, 0x786f7ab62875ebbc);
@@ -49,13 +53,17 @@ pub mod node {
     pub const LIGHT_NODE: &str = "light_node";
     pub const TEXTURE_REPO: &str = "texture_repo_node";
     pub const MATERIAL_REPO: &str = "material_repo_node";
+    pub const ALT_DEPTH_TEXTURE: &str = "alt_depth";
+    pub const DEPTH_SEQUENCING_NODE: &str = "depth_sequencing";
 }
 
 impl Plugin for OctreeRayTracerPlugin {
     fn build(&self, app: &mut AppBuilder) {
         {
             // Build render graph
-            let mut render_graph = app.resources_mut().get_mut::<RenderGraph>().unwrap();
+            let resources = app.resources_mut();
+            let msaa = resources.get::<Msaa>().unwrap();
+            let mut render_graph = resources.get_mut::<RenderGraph>().unwrap();
             let mut ray_pass_node = PassNode::<&RayPass>::new(PassDescriptor {
                 color_attachments: vec![RenderPassColorAttachmentDescriptor {
                     attachment: TextureAttachment::Input("color_attachment".to_string()),
@@ -87,6 +95,31 @@ impl Plugin for OctreeRayTracerPlugin {
             render_graph
                 .add_node_edge(base_render_graph::node::CAMERA_3D, node::RAY_PASS)
                 .unwrap();
+
+
+            // Alt depth texture
+            render_graph.add_node(
+                node::DEPTH_SEQUENCING_NODE,
+                SequencingNode::new(2),
+            );
+            render_graph.add_node(
+                node::ALT_DEPTH_TEXTURE,
+                WindowTextureNode::new(
+                    WindowId::primary(),
+                    TextureDescriptor {
+                        size: Extent3d {
+                            depth: 1,
+                            width: 1,
+                            height: 1,
+                        },
+                        mip_level_count: 1,
+                        sample_count: msaa.samples,
+                        dimension: TextureDimension::D2,
+                        format: TextureFormat::Depth32Float, // PERF: vulkan docs recommend using 24 bit depth for better performance
+                        usage: TextureUsage::OUTPUT_ATTACHMENT,
+                    },
+                ),
+            );
             render_graph
                 .add_slot_edge(
                     base_render_graph::node::PRIMARY_SWAP_CHAIN,
@@ -99,6 +132,22 @@ impl Plugin for OctreeRayTracerPlugin {
                 .add_slot_edge(
                     base_render_graph::node::MAIN_DEPTH_TEXTURE,
                     WindowTextureNode::OUT_TEXTURE,
+                    node::DEPTH_SEQUENCING_NODE,
+                    0,
+                )
+                .unwrap();
+            render_graph
+                .add_slot_edge(
+                    node::ALT_DEPTH_TEXTURE,
+                    WindowTextureNode::OUT_TEXTURE,
+                    node::DEPTH_SEQUENCING_NODE,
+                    1,
+                )
+                .unwrap();
+            render_graph
+                .add_slot_edge(
+                    node::DEPTH_SEQUENCING_NODE,
+                    SequencingNode::OUT_TEXTURE,
                     node::RAY_PASS,
                     "depth",
                 )
