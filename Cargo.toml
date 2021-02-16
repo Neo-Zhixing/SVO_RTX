@@ -11,6 +11,9 @@ glam = "*"
 svo = { git = "https://github.com/Neo-Zhixing/svo" }
 image = "0.23.12"
 bevy_sky = { git = "https://github.com/Neo-Zhixing/bevy_sky" }
+wgpu-core = "*"
+wgpu = "*"
+gfx-hal = "*"
 
 [dev-dependencies]
 dot_vox = "4.1.0"

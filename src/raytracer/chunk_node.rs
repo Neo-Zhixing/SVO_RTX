@@ -8,6 +8,9 @@ use bevy::render::render_graph::{CommandQueue, ResourceSlots, SystemNode};
 use bevy::render::renderer::{
     BufferInfo, BufferUsage, RenderContext, RenderResourceBinding, RenderResourceContext,
 };
+use bevy::wgpu::renderer::WgpuRenderResourceContext;
+use crate::wgpu_extract::WgpuExtract;
+use gfx_hal::Instance;
 
 #[derive(Debug)]
 pub struct ChunkNode {
@@ -59,7 +62,16 @@ pub fn chunk_node_system(
     chunks: Res<Assets<Chunk>>,
     mut query: Query<(&Handle<Chunk>, &mut ChunkState, &mut RenderPipelines)>,
 ) {
-    let render_resource_context = &**render_resource_context;
+    let render_resource_context = render_resource_context
+        .downcast_ref::<WgpuRenderResourceContext>()
+        .unwrap();
+
+    unsafe {
+        let device = render_resource_context.device.clone();
+        let device = device.extract();
+        let global = &device.context.0;
+        let metal = global.instance.metal.as_ref().unwrap();
+    };
 
     for (chunk_handle, mut chunk_state, mut render_pipelines) in query.iter_mut() {
         if chunk_state.staging_buffer.is_none() {

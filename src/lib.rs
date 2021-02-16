@@ -1,6 +1,7 @@
 pub mod lights;
 pub mod material;
 pub mod raytracer;
+pub mod wgpu_extract;
 
 pub use raytracer::chunk_node::ChunkNode;
 pub use raytracer::OctreeRayTracerPlugin;
