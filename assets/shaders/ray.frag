@@ -215,7 +215,6 @@ void main() {
         dot(-sign(normal) * vec3(hitpoint.y, hitpoint.z, hitpoint.y), normal)
     );
     vec4 output_color;
-    uint diffuse_texture_id;
     float scale;
 
     // Calculate ambient
@@ -239,31 +238,12 @@ void main() {
 
     if (voxel_id == 0) {
         output_color = vec4(1.0, 1.0, 1.0, 1.0);
-        diffuse_texture_id = 0;
-    } else if ((voxel_id & 0x8000) == 0) {
-        // regular
-        uint material_id = voxel_id - 1;
-        diffuse_texture_id = uint(regularMaterials[material_id].diffuse);
-        output_color = vec4(1.0, 1.0, 1.0, 1.0);
-        scale = regularMaterials[material_id].scale;
     } else {
         // colored
         uint material_id = (voxel_id >> 8) & 0x7f;
         uint color = voxel_id & 0xff;
-        diffuse_texture_id = uint(coloredMaterials[material_id].diffuse);
         output_color = coloredMaterials[material_id].palette[color];
-        scale = coloredMaterials[material_id].scale;
     }
-
-    if (diffuse_texture_id > 0) {
-        output_color *= texture(
-            sampler2DArray(TextureRepo,  TextureRepoSampler),
-            vec3(texcoords * scale, diffuse_texture_id-1)
-        );
-    }
-
-
-    float ray_fog_factor = exp2(iteration * 18 - 18); // 0 for near, 1 for far
-    f_color = output_color * (1 - ray_fog_factor);
+    f_color = output_color;
     #endif
 }

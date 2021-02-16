@@ -54,6 +54,7 @@ fn setup(
     colored_material.color_palette[1] = Color::BLUE;
     colored_material.color_palette[2] = Color::YELLOW;
     colored_material.color_palette[3] = Color::RED;
+    colored_material.color_palette[4] = Color::GREEN;
     let scale: f32 = 1.0;
     let stone_material = Material {
         name: "stone".into(),
@@ -151,23 +152,23 @@ fn setup(
                                 let voxel = match block.name {
                                     "minecraft:air" => continue,
                                     "minecraft:cave_air" => continue,
-                                    "minecraft:stone" => stone_voxel,
-                                    "minecraft:granite" => stone_voxel,
-                                    "minecraft:gravel" => stone_voxel,
-                                    "minecraft:diorite" => stone_voxel,
-                                    "minecraft:iron_ore" => stone_voxel,
-                                    "minecraft:coal_ore" => stone_voxel,
-                                    "minecraft:andesite" => stone_voxel,
-                                    "minecraft:bedrock" => stone_voxel,
+                                    "minecraft:stone" => colored_voxel.with_color(3),
+                                    "minecraft:granite" => colored_voxel.with_color(3),
+                                    "minecraft:gravel" => colored_voxel.with_color(3),
+                                    "minecraft:diorite" => colored_voxel.with_color(3),
+                                    "minecraft:iron_ore" => colored_voxel.with_color(3),
+                                    "minecraft:coal_ore" => colored_voxel.with_color(3),
+                                    "minecraft:andesite" => colored_voxel.with_color(3),
+                                    "minecraft:bedrock" => colored_voxel.with_color(3),
                                     "minecraft:grass" => continue,
                                     "minecraft:tall_grass" => continue,
-                                    "minecraft:grass_block" => grass_voxel,
-                                    "minecraft:oak_log" => log_voxel,
-                                    "minecraft:oak_leaves" => leaves_voxel,
-                                    "minecraft:acacia_leaves" => leaves_voxel,
-                                    "minecraft:dirt" => dirt_voxel,
+                                    "minecraft:grass_block" => colored_voxel.with_color(4),
+                                    "minecraft:oak_log" => colored_voxel.with_color(1),
+                                    "minecraft:oak_leaves" => colored_voxel.with_color(4),
+                                    "minecraft:acacia_leaves" => colored_voxel.with_color(4),
+                                    "minecraft:dirt" => colored_voxel.with_color(3),
                                     "minecraft:water" => colored_voxel.with_color(1),
-                                    "minecraft:sand" => sand_voxel,
+                                    "minecraft:sand" => colored_voxel.with_color(2),
                                     "minecraft:lava" => colored_voxel.with_color(3),
                                     _ => {
                                         //println!("Missing block: w {:?}", block.name);

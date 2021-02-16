@@ -1,5 +1,3 @@
-#![feature(const_in_array_repeat_expressions)]
-
 pub mod lights;
 pub mod material;
 pub mod raytracer;
